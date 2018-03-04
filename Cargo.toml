@@ -1,0 +1,10 @@
+[package]
+name = "comphdl"
+version = "0.1.0"
+authors = ["Badel2 <2badel2@gmail.com>"]
+
+[dependencies]
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+vcd = "0.3"
