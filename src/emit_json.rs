@@ -1,5 +1,6 @@
 use super::Component;
 use super::Structural;
+use super::PortNames;
 use super::Index;
 use std::collections::HashMap;
 use serde_json;
@@ -59,13 +60,15 @@ impl Module {
         let mut pin_addr_to_yosys_addr: HashMap<ComponentIndex, usize> = HashMap::new();
         let mut ya = 2; // start with address 2 because 0 and 1 are logical 0 and 1
         for i in 0..num_inputs {
-            ports.insert(format!("i{}", i), Port::input(ya));
+            let ref port_name = c.port_names.input[i];
+            ports.insert(format!("{}", port_name), Port::input(ya));
             let pa = ComponentIndex::input(0, i);
             pin_addr_to_yosys_addr.insert(pa, ya);
             ya += 1;
         }
         for i in 0..num_outputs {
-            ports.insert(format!("o{}", i), Port::output(ya));
+            let ref port_name = c.port_names.output[i];
+            ports.insert(format!("{}", port_name), Port::output(ya));
             let pa = ComponentIndex::output(0, i);
             pin_addr_to_yosys_addr.insert(pa, ya);
             ya += 1;
@@ -118,7 +121,8 @@ impl Module {
             let n_out = c.components[c_id].comp.num_outputs();
             let name = c.components[c_id].comp.name().to_string();
             let connections = &c.components[c_id].connections;
-            let cell = Cell::new(c_id, name, n_in, n_out, connections, &pin_addr_to_yosys_addr);
+            let port_names = c.components[c_id].comp.port_names();
+            let cell = Cell::new(c_id, name, n_in, n_out, connections, &pin_addr_to_yosys_addr, &port_names);
             let name = c.components[c_id].comp.name();
             cells.insert(format!("${}$input.v:1${}", name, c_id), cell);
         }
@@ -168,19 +172,24 @@ struct Cell {
 impl Cell {
     fn new(c_id: usize, name: String, n_in: usize, n_out: usize,
            connections: &Vec<Vec<Index>>,
-           pin_addr_to_yosys_addr: &HashMap<ComponentIndex, usize>) -> Cell {
+           pin_addr_to_yosys_addr: &HashMap<ComponentIndex, usize>,
+           port_names: &PortNames
+    ) -> Cell {
         let mut port_directions = HashMap::new();
         let mut yosys_connections = HashMap::new();
         for i in 0..n_in {
-            port_directions.insert(format!("i{}", i), Direction::Input);
+            let ref pn = port_names.input[i];
+            port_directions.insert(format!("{}", pn), Direction::Input);
             let x = ComponentIndex::input(c_id, i);
             let yos_addr = vec![pin_addr_to_yosys_addr[&x]];
-            yosys_connections.insert(format!("i{}", i), yos_addr);
+            yosys_connections.insert(format!("{}", pn), yos_addr);
         }
         for i in 0..n_out {
-            port_directions.insert(format!("o{}", i), Direction::Output);
+            let ref pn = port_names.output[i];
+            port_directions.insert(format!("{}", pn), Direction::Output);
             let jj = ComponentIndex::output(c_id, i);
             let mut yos_addr = vec![];
+            // TODO: if connections is empty, insert dummy port
             for x in connections[i].iter() {
                 let a = if x.comp_id == 0 {
                     ComponentIndex::output(x.comp_id, x.input_id)
@@ -189,7 +198,7 @@ impl Cell {
                 };
                 yos_addr.push(pin_addr_to_yosys_addr[&a]);
             }
-            yosys_connections.insert(format!("o{}", i), yos_addr);
+            yosys_connections.insert(format!("{}", pn), yos_addr);
         }
 
         Cell {

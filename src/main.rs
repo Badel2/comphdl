@@ -1,6 +1,3 @@
-// Remove warnings
-#![allow(unused)]
-
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -56,6 +53,7 @@ impl Iterator for InfiniteInputIterator {
     }
 }
 
+#[derive(Debug, Clone)]
 struct RepInputIterator {
     current: Vec<Bit>,
     count: u32,
@@ -131,6 +129,19 @@ trait Component: std::fmt::Debug {
     fn write_internal_signals(&self, _w: &mut vcd::Writer, _i: &mut u64, _vh: &VcdSignalHandle) -> io::Result<()> {
         Ok(())
     }
+    fn port_names(&self) -> PortNames {
+        PortNames::default(self.num_inputs(), self.num_outputs())
+    }
+    fn clone_as_structural(&self) -> Option<Structural> {
+        None
+    }
+    fn box_clone(&self) -> Box<Component>;
+}
+
+impl Clone for Box<Component> {
+    fn clone(&self) -> Box<Component> {
+        self.box_clone()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -150,6 +161,7 @@ impl InstanceIndex {
     }
 }
 
+// FIXME: This function is the main bottleneck
 fn write_vcd_signals(writer: &mut vcd::Writer, vi: InstanceIndex, vh: &VcdSignalHandle,
                      signals1: &[Bit], signals2: &[Bit]) -> io::Result<InstanceIndex> {
     let mut vi = vi.clone();
@@ -174,6 +186,9 @@ fn run_simulation(w: &mut io::Write,
                   inputs: &mut Iterator<Item=Vec<Bit>>,
                   ticks: usize) -> io::Result<()> {
     let mut writer = vcd::Writer::new(w);
+
+    let a = c.clone_as_structural();
+    println!("{:#?}", a);
 
     // Write the header
     writer.timescale(1, TimescaleUnit::NS)?; // 1 tick = 1 ns
@@ -249,6 +264,40 @@ impl Component for Nand {
     fn name(&self) -> &str {
         "NAND"
     }
+    fn box_clone(&self) -> Box<Component> {
+        Box::new((*self).clone())
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+struct ConstantBit { }
+
+impl ConstantBit {
+    fn new() -> Self {
+        Self { }
+    }
+}
+
+impl Component for ConstantBit {
+    fn update(&mut self, input: &[Bit]) -> Vec<Bit> {
+        assert!(input.is_empty());
+        vec![Bit::L, Bit::H, Bit::X]
+    }
+    fn num_inputs(&self) -> usize {
+        0
+    }
+    fn num_outputs(&self) -> usize {
+        3
+    }
+    fn name(&self) -> &str {
+        "GND-VCC"
+    }
+    fn box_clone(&self) -> Box<Component> {
+        Box::new((*self).clone())
+    }
+    fn port_names(&self) -> PortNames {
+        PortNames::new(&[], &["o0", "o1", "oX"])
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -287,26 +336,60 @@ impl Component for Or2 {
     fn name(&self) -> &str {
         "OR"
     }
+    fn box_clone(&self) -> Box<Component> {
+        Box::new((*self).clone())
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+struct PortNames {
+    input: Vec<String>,
+    output: Vec<String>,
+}
+
+impl PortNames {
+    fn new(input: &[&str], output: &[&str]) -> PortNames {
+        // TODO: check for duplicate names
+        let input = input.iter().map(|x| x.to_string()).collect();
+        let output = output.iter().map(|x| x.to_string()).collect();
+        PortNames { input, output }
+    }
+    fn default(num_inputs: usize, num_outputs: usize) -> PortNames {
+        let mut input = vec![];
+        for i in 0..num_inputs {
+            input.push(format!("i{}", i));
+        }
+        let mut output = vec![];
+        for i in 0..num_outputs {
+            output.push(format!("o{}", i));
+        }
+
+        PortNames { input, output }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Structural {
     components: Vec<CompIo>,
     num_inputs: usize,
     num_outputs: usize,
     name: String,
+    port_names: PortNames,
 }
 
 impl Structural {
     fn new(components: Vec<CompIo>, num_inputs: usize, num_outputs: usize,
-           name: &str) -> Structural {
+           name: &str, port_names: PortNames) -> Structural {
         // Component 0 must have been created using CompIo::c_zero
         assert_eq!(components[0].input.len(), num_outputs);
         assert_eq!(components[0].output.len(), num_inputs);
         assert_eq!(components[0].connections.len(), num_inputs);
+        // Check port_names len is valid
+        assert_eq!(port_names.input.len(), num_inputs);
+        assert_eq!(port_names.output.len(), num_outputs);
         // TODO: check that all the connections are valid
         let name = name.to_string();
-        Structural { components, num_inputs, num_outputs, name }
+        Structural { components, num_inputs, num_outputs, name, port_names }
     }
     fn propagate(&mut self, c_id: usize) {
         // TODO: avoid this clone
@@ -374,11 +457,15 @@ impl Component for Structural {
             let instance_name = format!("{}-{}", self.name(), j);
             writer.add_module(&instance_name)?;
             for i in 0..self.num_inputs {
-                vh.id.insert(vi, writer.add_wire(1, &format!("{}-i{}", instance_name, i))?);
+                let ref port_name = self.port_names.input[i];
+                vh.id.insert(vi, writer.add_wire(1,
+                    &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
             }
             for i in 0..self.num_outputs {
-                vh.id.insert(vi, writer.add_wire(1, &format!("{}-o{}", instance_name, i))?);
+                let ref port_name = self.port_names.output[i];
+                vh.id.insert(vi, writer.add_wire(1,
+                    &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
             }
 
@@ -389,12 +476,17 @@ impl Component for Structural {
             let mut vi = InstanceIndex::new(*j as usize, 0);
             let instance_name = format!("{}-{}", c.comp.name(), j);
             writer.add_module(&instance_name)?;
+            let port_names = c.comp.port_names();
             for i in 0..c.comp.num_inputs() {
-                vh.id.insert(vi, writer.add_wire(1, &format!("{}-i{}", instance_name, i))?);
+                let ref port_name = port_names.input[i];
+                vh.id.insert(vi, writer.add_wire(1,
+                    &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
             }
             for i in 0..c.comp.num_outputs() {
-                vh.id.insert(vi, writer.add_wire(1, &format!("{}-o{}", instance_name, i))?);
+                let ref port_name =port_names.output[i];
+                vh.id.insert(vi, writer.add_wire(1,
+                    &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
             }
             *j += 1;
@@ -433,9 +525,18 @@ impl Component for Structural {
 
         Ok(())
     }
+    fn port_names(&self) -> PortNames {
+        self.port_names.clone()
+    }
+    fn clone_as_structural(&self) -> Option<Structural> {
+        Some(self.clone())
+    }
+    fn box_clone(&self) -> Box<Component> {
+        Box::new((*self).clone())
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct CompIo {
     comp: Box<Component>,
     input: Vec<Bit>,
@@ -495,7 +596,8 @@ fn nand_short() {
     
     c.push(c_zero);
     c.push(nand_a);
-    let mut nand_short = Structural::new(c, 1, 1, "NAND short");
+    let pn = PortNames::default(1, 1);
+    let mut nand_short = Structural::new(c, 1, 1, "NAND short", pn);
     truth_table(&mut nand_short);
 }
 
@@ -515,7 +617,8 @@ fn rs_latch() {
     c.push(c_zero);
     c.push(nand_a);
     c.push(nand_b);
-    let mut rs_latch = Structural::new(c, 2, 2, "RS Latch");
+    let pn = PortNames::new(&["R", "S"], &["Q", "Q'"]);
+    let mut rs_latch = Structural::new(c, 2, 2, "RS Latch", pn);
     truth_table(&mut rs_latch);
 }
 
@@ -537,7 +640,8 @@ fn boxed_or_gate() -> Box<Component> {
     c.push(nand_b);
     c.push(nand_c);
     
-    Box::new(Structural::new(c, 2, 1, "OR2"))
+    let pn = PortNames::default(2, 1);
+    Box::new(Structural::new(c, 2, 1, "OR2", pn))
 }
 
 fn or_gate() {
@@ -569,7 +673,8 @@ fn boxed_triple_or() -> Box<Component> {
     c.push(or_a);
     c.push(or_b);
     c.push(or_c);
-    let or_gate = Structural::new(c, 1, 1, "OR-OR-OR");
+    let pn = PortNames::default(1, 1);
+    let or_gate = Structural::new(c, 1, 1, "OR-OR-OR", pn);
     let s = emit_json::from_structural(&or_gate).unwrap();
     println!("{}", s);
 
@@ -595,7 +700,8 @@ fn triple_or() {
     c.push(or_a);
     c.push(or_b);
     c.push(or_c);
-    let mut or_gate = Structural::new(c, 1, 1, "OR-OR-OR");
+    let pn = PortNames::default(1, 1);
+    let mut or_gate = Structural::new(c, 1, 1, "OR-OR-OR", pn);
     truth_table(&mut or_gate);
 }
 
@@ -661,20 +767,84 @@ fn mux_4_1() -> Structural {
     c.push(sel10);
     c.push(sel11);
     c.push(selor);
-    let mut or_gate = Structural::new(c, 6, 1, "MUX-4-TO-1");
+    let pn = PortNames::new(&["S1", "S0", "A", "B", "C", "D"], &["Y"]);
+    let mut or_gate = Structural::new(c, 6, 1, "MUX-4-TO-1", pn);
+
+    or_gate
+}
+
+fn mux_xor() -> Structural {
+    // a1, a0
+    let mut c_zero = CompIo::c_zero(2, 1); // c_id: 0
+    let mut mux41 = CompIo::new(Box::new(mux_4_1())); // c_id: 1
+    let mut gndvcc = CompIo::new(Box::new(ConstantBit::new())); // c_id: 2
+
+    c_zero.add_connection(0, Index::new(1, 0)); // s1 -> mux s1
+    c_zero.add_connection(1, Index::new(1, 1)); // s0 -> mux s0
+    gndvcc.add_connection(0, Index::new(1, 2)); // 0 -> sel00
+    gndvcc.add_connection(1, Index::new(1, 3)); // 1 -> sel01
+    gndvcc.add_connection(1, Index::new(1, 4)); // 1 -> sel10
+    gndvcc.add_connection(0, Index::new(1, 5)); // 0 -> sel11
+    mux41.add_connection(0, Index::new(0, 0)); // mux y -> y
+
+    let c = vec![c_zero, mux41, gndvcc];
+    let pn = PortNames::new(&["S1", "S0"], &["Y"]);
+    let mut mux_xor = Structural::new(c, 2, 1, "MUX-XOR", pn);
+
+    mux_xor
+}
+
+fn buffer() -> Structural {
+    let mut c_zero = CompIo::c_zero(1, 1);
+    c_zero.add_connection(0, Index::new(0, 0));
+    let c = vec![c_zero];
+    let pn = PortNames::new(&["D"], &["Q"]);
+    let mut d = Structural::new(c, 1, 1, "D-Latch", pn);
+
+    d
+}
+
+fn glitchless_xor() -> Structural {
+    // a1, a0, A, B, C, D
+    let mut c_zero = CompIo::c_zero(2, 1); // c_id: 0
+    let mut not_a1 = CompIo::new(Box::new(Nand::new(1))); // c_id: 1
+    let mut not_a0 = CompIo::new(Box::new(Nand::new(1))); // c_id: 2
+    let mut sel01 = CompIo::new(Box::new(Nand::new(2))); // c_id: 3
+    let mut sel10 = CompIo::new(Box::new(Nand::new(2))); // c_id: 4
+    let mut selor = CompIo::new(Box::new(Nand::new(2))); // c_id: 5
+    let mut buf0 = CompIo::new(Box::new(buffer())); // c_id: 6
+    let mut buf1 = CompIo::new(Box::new(buffer())); // c_id: 7
+
+    c_zero.add_connection(0, Index::new(1, 0)); // a1 -> not_a1
+    c_zero.add_connection(1, Index::new(2, 0)); // a0 -> not_a0
+    c_zero.add_connection(0, Index::new(7, 0)); // a1 -> sel10
+    c_zero.add_connection(1, Index::new(6, 0)); // a0 -> sel01
+    not_a1.add_connection(0, Index::new(3, 1)); // not_a1 -> sel01
+    not_a0.add_connection(0, Index::new(4, 1)); // not_a0 -> sel10
+    sel01.add_connection(0, Index::new(5, 0)); //
+    sel10.add_connection(0, Index::new(5, 1)); //
+    selor.add_connection(0, Index::new(0, 0)); // output
+    buf1.add_connection(0, Index::new(4, 0)); // a1 -> sel10
+    buf0.add_connection(0, Index::new(3, 0)); // a0 -> sel01
+
+    let mut c = vec![];
+    c.push(c_zero);
+    c.push(not_a1);
+    c.push(not_a0);
+    c.push(sel01);
+    c.push(sel10);
+    c.push(selor);
+    c.push(buf0);
+    c.push(buf1);
+    let pn = PortNames::new(&["S1", "S0"], &["Y"]);
+    let mut or_gate = Structural::new(c, 2, 1, "XOR2", pn);
 
     or_gate
 }
 
 fn write_vcd() {
-    let mut or_gate = boxed_triple_or();
-
-    let mut buf = Vec::new();
-    //let input = all_n_bit_combinations(2);
-    //println!("{:?}", input);
-    //let mut input = RepInputIterator::new(2, 5);
-    //let mut or_gate = boxed_or_gate();
-    //let mut input = RepInputIterator::new(6, 5);
+    let mut buf = Vec::with_capacity(20_000_000);
+    let mut input = RepInputIterator::new(2, 50);
     /*
     let mut input = vec![vec![Bit::L, Bit::L, Bit::L, Bit::H, Bit::H, Bit::L]; 5];
     input.push(vec![Bit::H, Bit::H, Bit::L, Bit::H, Bit::H, Bit::L]);
@@ -683,9 +853,9 @@ fn write_vcd() {
     input.push(vec![Bit::H, Bit::H, Bit::L, Bit::H, Bit::H, Bit::L]);
     input.push(vec![Bit::H, Bit::H, Bit::L, Bit::H, Bit::H, Bit::L]);
     */
-    let mut input = std::iter::repeat(vec![Bit::L, Bit::L, Bit::L, Bit::H, Bit::H, Bit::L]).take(5).chain(std::iter::repeat(vec![Bit::H, Bit::H, Bit::L, Bit::H, Bit::H, Bit::L]).take(5)).cycle();
+    //let mut input = std::iter::repeat(vec![Bit::L, Bit::L, Bit::L, Bit::H, Bit::H, Bit::L]).take(5).chain(std::iter::repeat(vec![Bit::H, Bit::H, Bit::L, Bit::H, Bit::H, Bit::L]).take(5)).cycle();
     println!("Cool iterator: {:#?}", input);
-    let mut or_gate = Box::new(mux_4_1());
+    let mut or_gate = Box::new(glitchless_xor());
     run_simulation(&mut buf, &mut *or_gate, &mut input, 400).unwrap();
 
     let mut file = File::create("foo.vcd").expect("Unable to create file");
@@ -693,7 +863,7 @@ fn write_vcd() {
 }
 
 fn yosys_netlist() {
-    let mut c = mux_4_1();
+    let mut c = glitchless_xor();
     let s = emit_json::from_structural(&c).unwrap();
     println!("{}", s);
 }
