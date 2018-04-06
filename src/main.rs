@@ -107,13 +107,14 @@ fn next_bit_combination(x: &[Bit]) -> Vec<Bit> {
     let mut i = x.len();
     let mut carry = true;
     while carry == true && i > 0 {
-        carry = false;
         i -= 1;
-        y[i] = match x[i] {
-            Bit::L => Bit::H,
-            Bit::H => { carry = true; Bit::L },
-            Bit::X => Bit::X,
-        };
+        match x[i] {
+            Bit::L => { carry = false; y[i] = Bit::H; },
+            Bit::H => { carry = true; y[i] = Bit::L; },
+            // Incrementing X would make all the higher bits X, we don't want
+            // that, instead we keep it as X and increment the next bit
+            Bit::X => { carry = true; },
+        }
     }
 
     y
