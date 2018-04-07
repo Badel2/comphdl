@@ -1,3 +1,6 @@
+// Remove warnings
+#![allow(unused)]
+
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -869,11 +872,6 @@ fn yosys_netlist() {
 }
 
 fn main(){
-    old_or_gate();
-    or_gate();
-    rs_latch();
-    nand_short();
-    triple_or();
     write_vcd();
     yosys_netlist();
 }
