@@ -213,8 +213,9 @@ impl ComponentFactory {
         Self { components, comp_id, comp_def }
     }
     fn create_named(&self, name: &str) -> Box<Component> {
-        let c_id = self.comp_id[name];
-        self.create(c_id)
+        println!("Creating component {}", name);
+        let c_id = self.comp_id.get(name).expect("This component does not exist");
+        self.create(*c_id)
     }
     fn create(&self, c_id: usize) -> Box<Component> {
         let ref inputs = self.components[c_id].inputs;

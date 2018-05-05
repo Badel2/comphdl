@@ -624,6 +624,6 @@ fn main(){
     let mut args = env::args();
     let _program_name = args.next().unwrap();
     let filename = args.next().unwrap_or(format!("test.txt"));
-    let top = args.next().unwrap_or(format!("Demux_4_1"));
+    let top = args.next().unwrap_or(format!("Demux_1_4"));
     parse_file(&filename, &top);
 }
