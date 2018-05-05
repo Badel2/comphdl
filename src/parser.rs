@@ -53,7 +53,7 @@ impl CompDefinition {
            other: &[CompInfo]
     ) -> Self {
         let mut comp = vec![];
-        let mut assignments: HashMap<String, String> = HashMap::new();
+        let mut assignments: Vec<Vec<String>> = vec![];
         let mut signals = HashMap::new();
         let ref name = c_zero.name;
 
@@ -79,31 +79,57 @@ impl CompDefinition {
         for c in other {
             // Prevent recursive definitions
             assert!(name != &c.name, format!("Recursive definition of component {}", name));
+
+            // Maybe extract assignments to it own function?
             if c.name == "actually, I'm just an assignment" {
                 assert!(c.inputs.len() == c.outputs.len(), "unbalanced assignment");
                 for (left, right) in c.inputs.iter().zip(c.outputs.iter()) {
-                    let replace_this;
-                    let replace_with; 
-                    // from: to
-                    // a: b
-                    // b: c => c: b
-                    if let Some(a) = assignments.get(left) {
-                        // Input has a replacement, replace output with that
-                        //assignments.insert(right, a.to_string());
-                        replace_this = right.to_string();
-                        replace_with = a.to_string();
-                    } else if let Some(b) = assignments.get(right) {
-                        // Output has a replacement, replace input with that
-                        //assignments.insert(left, b.to_string());
-                        replace_this = left.to_string();
-                        replace_with = b.to_string();
-                    } else {
-                        //assignments.insert(left, right);
-                        replace_this = left.to_string();
-                        replace_with = right.to_string();
+                    if left == right {
+                        continue;
+                    }
+                    let mut left_pos = None;
+                    let mut right_pos = None;
+                    for (i, ass) in assignments.iter().enumerate() {
+                        for x in ass {
+                            if x == left {
+                                if left_pos.is_some() {
+                                    panic!("Duplicate");
+                                }
+                                left_pos = Some(i);
+                            }
+                            if x == right {
+                                if right_pos.is_some() {
+                                    panic!("Duplicate");
+                                }
+                                right_pos = Some(i);
+                            }
+                        }
                     }
 
-                    assignments.insert(replace_this, replace_with);
+                    match (left_pos, right_pos) {
+                        (None, None) => {
+                            // New group
+                            assignments.push(vec![left.to_string(), right.to_string()]);
+                        }
+                        (Some(i), None) => {
+                            // Push right to group which contains left
+                            assignments[i].push(right.to_string());
+                        }
+                        (None, Some(i)) => {
+                            // Push left to group which contains right 
+                            assignments[i].push(left.to_string());
+                        }
+                        (Some(i), Some(j)) if i != j => {
+                            // Merge groups: a=b with c=d when b=d
+                            let (i, j) = if i < j { (i, j) } else { (j, i) };
+                            let merge = assignments.swap_remove(j);
+                            assignments[i].extend(merge);
+                        }
+                        (Some(i), Some(j)) if i == j => {
+                            // Do nothing
+                        }
+                        _ => panic!("I missed something?"),
+                    }
                 }
                 continue;
             }
@@ -122,24 +148,14 @@ impl CompDefinition {
             }
         }
 
-        /*
         // Apply assignments
-        for ass in assignments {
-            /*
-            // Doesn't work u_u
-            if let Some(x) = signals.remove(ass1) {
-                signals.entry(ass2).or_insert(vec![]).extend(x);
-            } else if let Some(x) = signals.remove(ass2) {
-                signals.entry(ass1).or_insert(vec![]).extend(x);
+        for ass in assignments.iter() {
+            let ass2 = &ass[0];
+            for ass1 in ass.iter().skip(1) {
+                println!("Replacing {} with {}", ass1, ass2);
+                let x = signals.remove(&ass1).unwrap_or(vec![]);
+                signals.entry(&ass2).or_insert(vec![]).extend(x);
             }
-            */
-
-        }
-        */
-        for (ass1, ass2) in assignments.iter() {
-            println!("Replacing {} with {}", ass1, ass2);
-            let x = signals.remove(&ass1).unwrap_or(vec![]);
-            signals.entry(&ass2).or_insert(vec![]).extend(x);
         }
         
 
