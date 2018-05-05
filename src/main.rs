@@ -624,6 +624,9 @@ fn main(){
     let mut args = env::args();
     let _program_name = args.next().unwrap();
     let filename = args.next().unwrap_or(format!("test.txt"));
+    // I fixed that weird bug by recompiling the crate after changing
+    // Demux_1_4 to Demux_1, and then changing it again to Demux_1_4.
+    // Since there is nothing to commit, I add this comment.
     let top = args.next().unwrap_or(format!("Demux_1_4"));
     parse_file(&filename, &top);
 }
