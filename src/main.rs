@@ -1,5 +1,4 @@
-// Remove warnings
-#![allow(unused)]
+#![allow(dead_code)]
 
 extern crate serde;
 #[macro_use]
@@ -8,6 +7,8 @@ extern crate serde_json;
 extern crate vcd;
 
 mod emit_json;
+mod parser;
+pub mod comphdl1;
 
 use std::io;
 use std::io::Write;
@@ -18,7 +19,7 @@ use std::collections::HashMap;
 static VCD_SHOW_NAND: bool = true;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-enum Bit {
+pub enum Bit {
     L, // Low, false, 0
     H, // High, true, 1
     X, // Undefined
@@ -35,12 +36,12 @@ impl From<Bit> for vcd::Value {
 }
 
 // Returns all the n-bit combinations in order, loops infinitely
-struct InfiniteInputIterator {
+pub struct InfiniteInputIterator {
     current: Vec<Bit>,
 }
 
 impl InfiniteInputIterator {
-    fn new(n: usize) -> Self {
+    pub fn new(n: usize) -> Self {
         Self { current: vec![Bit::L; n] }
     }
 }
@@ -57,14 +58,14 @@ impl Iterator for InfiniteInputIterator {
 }
 
 #[derive(Debug, Clone)]
-struct RepInputIterator {
+pub struct RepInputIterator {
     current: Vec<Bit>,
     count: u32,
     max_count: u32,
 }
 
 impl RepInputIterator {
-    fn new(n: usize, rep: u32) -> Self {
+    pub fn new(n: usize, rep: u32) -> Self {
         Self {
             current: vec![Bit::L; n],
             count: rep,
@@ -121,7 +122,7 @@ fn next_bit_combination(x: &[Bit]) -> Vec<Bit> {
     y
 }
 
-trait Component: std::fmt::Debug {
+pub trait Component: std::fmt::Debug {
     fn update(&mut self, input: &[Bit]) -> Vec<Bit>;
     fn num_inputs(&self) -> usize;
     fn num_outputs(&self) -> usize;
@@ -148,24 +149,24 @@ impl Clone for Box<Component> {
 }
 
 #[derive(Debug, Clone)]
-struct VcdSignalHandle {
+pub struct VcdSignalHandle {
     id: HashMap<InstanceIndex, vcd::IdCode>,
 }
 
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
-struct InstanceIndex {
+pub struct InstanceIndex {
     instance: usize,
     port: usize,
 }
 
 impl InstanceIndex {
-    fn new(instance: usize, port: usize) -> Self {
+    pub fn new(instance: usize, port: usize) -> Self {
         Self { instance, port }
     }
 }
 
 // FIXME: This function is the main bottleneck
-fn write_vcd_signals(writer: &mut vcd::Writer, vi: InstanceIndex, vh: &VcdSignalHandle,
+pub fn write_vcd_signals(writer: &mut vcd::Writer, vi: InstanceIndex, vh: &VcdSignalHandle,
                      signals1: &[Bit], signals2: &[Bit]) -> io::Result<InstanceIndex> {
     let mut vi = vi.clone();
 
@@ -184,7 +185,7 @@ fn write_vcd_signals(writer: &mut vcd::Writer, vi: InstanceIndex, vh: &VcdSignal
     Ok(vi)
 }
 
-fn run_simulation(w: &mut io::Write,
+pub fn run_simulation(w: &mut io::Write,
                   c: &mut Component,
                   inputs: &mut Iterator<Item=Vec<Bit>>,
                   ticks: usize) -> io::Result<()> {
@@ -345,19 +346,23 @@ impl Component for Or2 {
 }
 
 #[derive(Debug, Clone)]
-struct PortNames {
+pub struct PortNames {
     input: Vec<String>,
     output: Vec<String>,
 }
 
 impl PortNames {
-    fn new(input: &[&str], output: &[&str]) -> PortNames {
+    pub fn new(input: &[&str], output: &[&str]) -> PortNames {
         // TODO: check for duplicate names
         let input = input.iter().map(|x| x.to_string()).collect();
         let output = output.iter().map(|x| x.to_string()).collect();
         PortNames { input, output }
     }
-    fn default(num_inputs: usize, num_outputs: usize) -> PortNames {
+    pub fn new_vec(input: Vec<String>, output: Vec<String>) -> PortNames {
+        // TODO: check for duplicate names
+        PortNames { input, output }
+    }
+    pub fn default(num_inputs: usize, num_outputs: usize) -> PortNames {
         let mut input = vec![];
         for i in 0..num_inputs {
             input.push(format!("i{}", i));
@@ -474,7 +479,7 @@ impl Component for Structural {
 
             *j += 1;
         }
-        
+
         for c in self.components.iter().skip(1).filter(|&c| VCD_SHOW_NAND || (c.comp.name() != "NAND")) {
             let mut vi = InstanceIndex::new(*j as usize, 0);
             let instance_name = format!("{}-{}", c.comp.name(), j);
@@ -588,290 +593,37 @@ impl Index {
     }
 }
 
-fn nand_short() {
-    let mut c = vec![];
-    let mut c_zero = CompIo::c_zero(1, 1); // c_id: 0
-    let mut nand_a = CompIo::new(Box::new(Nand::new(2))); // c_id: 1
-
-    c_zero.add_connection(0, Index::new(1, 0)); // input 0 -> nand_a
-    nand_a.add_connection(0, Index::new(1, 1)); // nand_a -> nand_a
-    nand_a.add_connection(0, Index::new(0, 0)); // nand_a -> out
-    
-    c.push(c_zero);
-    c.push(nand_a);
-    let pn = PortNames::default(1, 1);
-    let mut nand_short = Structural::new(c, 1, 1, "NAND short", pn);
-    truth_table(&mut nand_short);
-}
-
-fn rs_latch() {
-    let mut c = vec![];
-    let mut c_zero = CompIo::c_zero(2, 2); // c_id: 0
-    let mut nand_a = CompIo::new(Box::new(Nand::new(2))); // c_id: 1
-    let mut nand_b = CompIo::new(Box::new(Nand::new(2))); // c_id: 2
-
-    c_zero.add_connection(0, Index::new(1, 0)); // input 0 -> nand_a
-    c_zero.add_connection(1, Index::new(2, 0)); // input 1 -> nand_b
-    nand_a.add_connection(0, Index::new(2, 1)); // nand_a -> nand_b
-    nand_b.add_connection(0, Index::new(1, 1)); // nand_b -> nand_a
-    nand_a.add_connection(0, Index::new(0, 0)); // nand_a -> out
-    nand_b.add_connection(0, Index::new(0, 1)); // nand_b -> out
-    
-    c.push(c_zero);
-    c.push(nand_a);
-    c.push(nand_b);
-    let pn = PortNames::new(&["R", "S"], &["Q", "Q'"]);
-    let mut rs_latch = Structural::new(c, 2, 2, "RS Latch", pn);
-    truth_table(&mut rs_latch);
-}
-
-fn boxed_or_gate() -> Box<Component> {
-    let mut c = vec![];
-    let mut c_zero = CompIo::c_zero(2, 1); // c_id: 0
-    let mut nand_a = CompIo::new(Box::new(Nand::new(1))); // c_id: 1
-    let mut nand_b = CompIo::new(Box::new(Nand::new(1))); // c_id: 2
-    let mut nand_c = CompIo::new(Box::new(Nand::new(2))); // c_id: 3
-
-    c_zero.add_connection(0, Index::new(1, 0)); // input 0 -> nand_a
-    c_zero.add_connection(1, Index::new(2, 0)); // input 1 -> nand_b
-    nand_a.add_connection(0, Index::new(3, 0)); // nand_a -> nand_c
-    nand_b.add_connection(0, Index::new(3, 1)); // nand_b -> nand_c
-    nand_c.add_connection(0, Index::new(0, 0)); // output of nand_c == output of or
-
-    c.push(c_zero);
-    c.push(nand_a);
-    c.push(nand_b);
-    c.push(nand_c);
-    
-    let pn = PortNames::default(2, 1);
-    Box::new(Structural::new(c, 2, 1, "OR2", pn))
-}
-
-fn or_gate() {
-    let mut or_gate = boxed_or_gate();
-    truth_table(&mut *or_gate);
-}
-
-fn old_or_gate() {
-    let mut or_gate = Or2::new();
-    truth_table(&mut or_gate);
-}
-
-fn boxed_triple_or() -> Box<Component> {
-    let mut c = vec![];
-    let mut c_zero = CompIo::c_zero(1, 1); // c_id: 0
-    let mut or_a = CompIo::new(boxed_or_gate()); // c_id: 1
-    let mut or_b = CompIo::new(boxed_or_gate()); // c_id: 2
-    let mut or_c = CompIo::new(boxed_or_gate()); // c_id: 3
-
-    c_zero.add_connection(0, Index::new(1, 0)); // input 0 -> or_a
-    c_zero.add_connection(0, Index::new(1, 1)); // input 0 -> or_a
-    or_a.add_connection(0, Index::new(2, 0)); // or_a -> or_b
-    or_a.add_connection(0, Index::new(2, 1)); // or_a -> or_b
-    or_b.add_connection(0, Index::new(3, 0)); // or_b -> or_c
-    or_b.add_connection(0, Index::new(3, 1)); // or_b -> or_c
-    or_c.add_connection(0, Index::new(0, 0)); // output
-
-    c.push(c_zero);
-    c.push(or_a);
-    c.push(or_b);
-    c.push(or_c);
-    let pn = PortNames::default(1, 1);
-    let or_gate = Structural::new(c, 1, 1, "OR-OR-OR", pn);
-    let s = emit_json::from_structural(&or_gate).unwrap();
-    println!("{}", s);
-
-    Box::new(or_gate)
-}
-
-fn triple_or() {
-    let mut c = vec![];
-    let mut c_zero = CompIo::c_zero(1, 1); // c_id: 0
-    let mut or_a = CompIo::new(boxed_or_gate()); // c_id: 1
-    let mut or_b = CompIo::new(boxed_or_gate()); // c_id: 2
-    let mut or_c = CompIo::new(boxed_or_gate()); // c_id: 3
-
-    c_zero.add_connection(0, Index::new(1, 0)); // input 0 -> or_a
-    c_zero.add_connection(0, Index::new(1, 1)); // input 0 -> or_a
-    or_a.add_connection(0, Index::new(2, 0)); // or_a -> or_b
-    or_a.add_connection(0, Index::new(2, 1)); // or_a -> or_b
-    or_b.add_connection(0, Index::new(3, 0)); // or_b -> or_c
-    or_b.add_connection(0, Index::new(3, 1)); // or_b -> or_c
-    or_c.add_connection(0, Index::new(0, 0)); // output
-
-    c.push(c_zero);
-    c.push(or_a);
-    c.push(or_b);
-    c.push(or_c);
-    let pn = PortNames::default(1, 1);
-    let mut or_gate = Structural::new(c, 1, 1, "OR-OR-OR", pn);
-    truth_table(&mut or_gate);
-}
-
-fn truth_table(or_gate: &mut Component) {
-    let n = or_gate.num_inputs();
-    println!("{} truth table:", or_gate.name());
-    let mut i = vec![Bit::L, Bit::L];
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-    //println!("{:#?}", or_gate);
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-    i = vec![Bit::L, Bit::H];
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-    i = vec![Bit::H, Bit::L];
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-    i = vec![Bit::H, Bit::H];
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-    println!("{:?} = {:?}", &i[0..n], or_gate.update(&i[0..n]));
-}
-
-fn mux_4_1() -> Structural {
-    let mut c = vec![];
-    // a1, a0, A, B, C, D
-    let mut c_zero = CompIo::c_zero(6, 1); // c_id: 0
-    let mut not_a1 = CompIo::new(Box::new(Nand::new(1))); // c_id: 1
-    let mut not_a0 = CompIo::new(Box::new(Nand::new(1))); // c_id: 2
-    let mut sel00 = CompIo::new(Box::new(Nand::new(3))); // c_id: 3
-    let mut sel01 = CompIo::new(Box::new(Nand::new(3))); // c_id: 4
-    let mut sel10 = CompIo::new(Box::new(Nand::new(3))); // c_id: 5
-    let mut sel11 = CompIo::new(Box::new(Nand::new(3))); // c_id: 6
-    let mut selor = CompIo::new(Box::new(Nand::new(4))); // c_id: 7
-
-    c_zero.add_connection(0, Index::new(1, 0)); // a1 -> not_a1
-    c_zero.add_connection(1, Index::new(2, 0)); // a0 -> not_a0
-    c_zero.add_connection(0, Index::new(5, 0)); // a1 -> sel10
-    c_zero.add_connection(0, Index::new(6, 0)); // a1 -> sel11
-    c_zero.add_connection(1, Index::new(4, 0)); // a0 -> sel01
-    c_zero.add_connection(1, Index::new(6, 1)); // a0 -> sel11
-    not_a1.add_connection(0, Index::new(3, 0)); // not_a1 -> sel00
-    not_a1.add_connection(0, Index::new(4, 1)); // not_a1 -> sel01
-    not_a0.add_connection(0, Index::new(3, 1)); // not_a0 -> sel00
-    not_a0.add_connection(0, Index::new(5, 1)); // not_a0 -> sel10
-    c_zero.add_connection(2, Index::new(3, 2)); // A -> sel00
-    c_zero.add_connection(3, Index::new(4, 2)); // B -> sel01
-    c_zero.add_connection(4, Index::new(5, 2)); // C -> sel10
-    c_zero.add_connection(5, Index::new(6, 2)); // D -> sel11
-    sel00.add_connection(0, Index::new(7, 0)); //
-    sel01.add_connection(0, Index::new(7, 1)); //
-    sel10.add_connection(0, Index::new(7, 2)); //
-    sel11.add_connection(0, Index::new(7, 3)); //
-    selor.add_connection(0, Index::new(0, 0)); // output
-
-    c.push(c_zero);
-    c.push(not_a1);
-    c.push(not_a0);
-    c.push(sel00);
-    c.push(sel01);
-    c.push(sel10);
-    c.push(sel11);
-    c.push(selor);
-    let pn = PortNames::new(&["S1", "S0", "A", "B", "C", "D"], &["Y"]);
-    let mut or_gate = Structural::new(c, 6, 1, "MUX-4-TO-1", pn);
-
-    or_gate
-}
-
-fn mux_xor() -> Structural {
-    // a1, a0
-    let mut c_zero = CompIo::c_zero(2, 1); // c_id: 0
-    let mut mux41 = CompIo::new(Box::new(mux_4_1())); // c_id: 1
-    let mut gndvcc = CompIo::new(Box::new(ConstantBit::new())); // c_id: 2
-
-    c_zero.add_connection(0, Index::new(1, 0)); // s1 -> mux s1
-    c_zero.add_connection(1, Index::new(1, 1)); // s0 -> mux s0
-    gndvcc.add_connection(0, Index::new(1, 2)); // 0 -> sel00
-    gndvcc.add_connection(1, Index::new(1, 3)); // 1 -> sel01
-    gndvcc.add_connection(1, Index::new(1, 4)); // 1 -> sel10
-    gndvcc.add_connection(0, Index::new(1, 5)); // 0 -> sel11
-    mux41.add_connection(0, Index::new(0, 0)); // mux y -> y
-
-    let c = vec![c_zero, mux41, gndvcc];
-    let pn = PortNames::new(&["S1", "S0"], &["Y"]);
-    let mut mux_xor = Structural::new(c, 2, 1, "MUX-XOR", pn);
-
-    mux_xor
-}
-
-fn buffer() -> Structural {
-    let mut c_zero = CompIo::c_zero(1, 1);
-    c_zero.add_connection(0, Index::new(0, 0));
-    let c = vec![c_zero];
-    let pn = PortNames::new(&["D"], &["Q"]);
-    let mut d = Structural::new(c, 1, 1, "D-Latch", pn);
-
-    d
-}
-
-fn glitchless_xor() -> Structural {
-    // a1, a0, A, B, C, D
-    let mut c_zero = CompIo::c_zero(2, 1); // c_id: 0
-    let mut not_a1 = CompIo::new(Box::new(Nand::new(1))); // c_id: 1
-    let mut not_a0 = CompIo::new(Box::new(Nand::new(1))); // c_id: 2
-    let mut sel01 = CompIo::new(Box::new(Nand::new(2))); // c_id: 3
-    let mut sel10 = CompIo::new(Box::new(Nand::new(2))); // c_id: 4
-    let mut selor = CompIo::new(Box::new(Nand::new(2))); // c_id: 5
-    let mut buf0 = CompIo::new(Box::new(buffer())); // c_id: 6
-    let mut buf1 = CompIo::new(Box::new(buffer())); // c_id: 7
-
-    c_zero.add_connection(0, Index::new(1, 0)); // a1 -> not_a1
-    c_zero.add_connection(1, Index::new(2, 0)); // a0 -> not_a0
-    c_zero.add_connection(0, Index::new(7, 0)); // a1 -> sel10
-    c_zero.add_connection(1, Index::new(6, 0)); // a0 -> sel01
-    not_a1.add_connection(0, Index::new(3, 1)); // not_a1 -> sel01
-    not_a0.add_connection(0, Index::new(4, 1)); // not_a0 -> sel10
-    sel01.add_connection(0, Index::new(5, 0)); //
-    sel10.add_connection(0, Index::new(5, 1)); //
-    selor.add_connection(0, Index::new(0, 0)); // output
-    buf1.add_connection(0, Index::new(4, 0)); // a1 -> sel10
-    buf0.add_connection(0, Index::new(3, 0)); // a0 -> sel01
-
-    let mut c = vec![];
-    c.push(c_zero);
-    c.push(not_a1);
-    c.push(not_a0);
-    c.push(sel01);
-    c.push(sel10);
-    c.push(selor);
-    c.push(buf0);
-    c.push(buf1);
-    let pn = PortNames::new(&["S1", "S0"], &["Y"]);
-    let mut or_gate = Structural::new(c, 2, 1, "XOR2", pn);
-
-    or_gate
-}
-
-fn write_vcd() {
-    let mut buf = Vec::with_capacity(20_000_000);
-    let mut input = RepInputIterator::new(2, 50);
-    /*
-    let mut input = vec![vec![Bit::L, Bit::L, Bit::L, Bit::H, Bit::H, Bit::L]; 5];
-    input.push(vec![Bit::H, Bit::H, Bit::L, Bit::H, Bit::H, Bit::L]);
-    input.push(vec![Bit::H, Bit::H, Bit::L, Bit::H, Bit::H, Bit::L]);
-    input.push(vec![Bit::H, Bit::H, Bit::L, Bit::H, Bit::H, Bit::L]);
-    input.push(vec![Bit::H, Bit::H, Bit::L, Bit::H, Bit::H, Bit::L]);
-    input.push(vec![Bit::H, Bit::H, Bit::L, Bit::H, Bit::H, Bit::L]);
-    */
-    //let mut input = std::iter::repeat(vec![Bit::L, Bit::L, Bit::L, Bit::H, Bit::H, Bit::L]).take(5).chain(std::iter::repeat(vec![Bit::H, Bit::H, Bit::L, Bit::H, Bit::H, Bit::L]).take(5)).cycle();
-    println!("Cool iterator: {:#?}", input);
-    let mut or_gate = Box::new(glitchless_xor());
-    run_simulation(&mut buf, &mut *or_gate, &mut input, 400).unwrap();
-
-    let mut file = File::create("foo.vcd").expect("Unable to create file");
-    file.write_all(&buf).expect("Error writing vcd");
-}
-
-fn yosys_netlist() {
-    let mut c = glitchless_xor();
+fn yosys_netlist(c: &Component) {
+    // We can only generate netlists from structural, not from component
+    let c = c.clone_as_structural().unwrap();
     let s = emit_json::from_structural(&c).unwrap();
     println!("{}", s);
 }
 
+fn parse_file(filename: &str, top: &str) {
+    // Create gate
+    let mut gate = parser::parse_file(filename, top);
+
+    // Run simulation
+    let mut buf = Vec::with_capacity(20_000_000);
+    let mut input = RepInputIterator::new(10, 50);
+    run_simulation(&mut buf, &mut *gate, &mut input, 4000).unwrap();
+
+    // Write simulation to foo.vcd
+    let mut file = File::create("foo.vcd").expect("Unable to create file");
+    file.write_all(&buf).expect("Error writing vcd");
+
+    // Print netlist JSON
+    yosys_netlist(&*gate);
+}
+
 fn main(){
-    write_vcd();
-    yosys_netlist();
+    // Usage: cargo run (for default arguments)
+    //        cargo run -- test.txt Buf123 (filename, component name)
+    use std::env;
+    let mut args = env::args();
+    let _program_name = args.next().unwrap();
+    let filename = args.next().unwrap_or(format!("test.txt"));
+    let top = args.next().unwrap_or(format!("Demux_4_1"));
+    parse_file(&filename, &top);
 }

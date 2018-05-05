@@ -1,0 +1,86 @@
+use std::str::FromStr;
+use parser::CompInfo;
+
+grammar;
+
+pub File: Vec<(CompInfo, Vec<CompInfo>)> = {
+    CompDef*
+};
+
+pub CompCall: CompInfo = {
+    <n: Name> <i: Inputs> <o: ("->" <Outputs>)?> => {
+        let o = o.unwrap_or(vec![]);
+        CompInfo::new(n, i, o)
+    },
+};
+
+// Definition, for new components
+pub CompDef: (CompInfo, Vec<CompInfo>) = {
+    "component" <CompCall> "{" <CompBody> "}",
+};
+
+pub CompBody: Vec<CompInfo> = {
+    <v: BodyStatement*> => {
+        v.into_iter().filter_map(|x| x).collect()
+    }
+};
+
+// Definition body: component calls separated by ";"
+pub BodyStatement: Option<CompInfo> = {
+    <CompCall> ";" => Some(<>),
+    <Assignment> ";" => Some(<>),
+    Comment => None,
+};
+
+pub Assignment: CompInfo = {
+    <a: Outputs> "=" <b: Outputs> => {
+        CompInfo::new("actually, I'm just an assignment".into(),
+            b,
+            a
+        )
+    }
+};
+
+// Right now comments are only allowed inside the body
+pub Comment = {
+    // C-style (non-nested)
+    r"/[*]([^*]|([*][^/]))*[*]/",
+    // C++
+    r"//.*",
+    // Python
+    r"#.*",
+};
+
+// [a-zA-Z0-9_]
+pub Word: String = {
+    r"(\w+)" => format!("{}", <>)
+};
+
+pub Name = Word;
+
+pub Inputs: Vec<String> = {
+    // (a, b)
+    "(" <VarArgs> ")",
+};
+
+// pub Outputs = Inputs;
+pub Outputs: Vec<String> = {
+    // (a, b)
+    "(" <VarArgs> ")",
+    // x
+    Word => vec![<>],
+};
+
+pub VarArgs = Comma<Word>;
+
+// Matches anything from "" to "a,b,c" or even "a,"
+Comma<T>: Vec<T> = {
+    <v:(<T> ",")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        }
+    }
+};

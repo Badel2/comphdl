@@ -6,18 +6,21 @@ use std::collections::HashMap;
 use serde_json;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
-struct ComponentIndex {
-    c_id: usize,
-    port_id: usize,
+pub struct ComponentIndex {
+    pub c_id: usize,
+    pub port_id: usize,
     direction: Direction,
 }
 
 impl ComponentIndex {
-    fn input(c_id: usize, port_id: usize) -> Self {
+    pub fn input(c_id: usize, port_id: usize) -> Self {
         Self { c_id, port_id, direction: Direction::Input }
     }
-    fn output(c_id: usize, port_id: usize) -> Self {
+    pub fn output(c_id: usize, port_id: usize) -> Self {
         Self { c_id, port_id, direction: Direction::Output }
+    }
+    pub fn is_output(&self) -> bool {
+        self.direction == Direction::Output
     }
 }
 
@@ -105,12 +108,17 @@ impl Module {
             let pa = ComponentIndex::input(0, i);
             let to = &c.components[0].connections[i];
             for x in to {
-                let a = if x.comp_id == 0 {
-                    ComponentIndex::output(x.comp_id, x.input_id)
+                if x.comp_id == 0 {
+                    let a = ComponentIndex::output(x.comp_id, x.input_id);
+                    let ref port_name = c.port_names.output[x.input_id];
+                    let ref port_name_in = c.port_names.input[i];
+                    let ex = ports[port_name_in].bits.clone();
+                    ports.get_mut(port_name).unwrap().bits = ex;
+                    *pin_addr_to_yosys_addr.get_mut(&a).unwrap() = pin_addr_to_yosys_addr[&pa];
                 } else {
-                    ComponentIndex::input(x.comp_id, x.input_id)
-                };
-                *pin_addr_to_yosys_addr.get_mut(&a).unwrap() = pin_addr_to_yosys_addr[&pa];
+                    let a = ComponentIndex::input(x.comp_id, x.input_id);
+                    *pin_addr_to_yosys_addr.get_mut(&a).unwrap() = pin_addr_to_yosys_addr[&pa];
+                }
             }
         }
 
