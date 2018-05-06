@@ -1,8 +1,8 @@
+use component::{ComponentIndex, Index, Component, CompIo, PortNames, Structural, Nand, ConstantBit};
+use comphdl1;
 use std::io::{BufReader, Read};
 use std::fs::File;
 use std::collections::HashMap;
-use super::{comphdl1, Index, Component, CompIo, PortNames, Structural, Nand, ConstantBit};
-use emit_json::ComponentIndex;
 
 #[derive(Debug, Clone)]
 pub struct CompInfo {

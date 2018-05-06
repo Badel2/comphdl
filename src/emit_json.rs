@@ -1,29 +1,6 @@
-use super::Component;
-use super::Structural;
-use super::PortNames;
-use super::Index;
-use std::collections::HashMap;
 use serde_json;
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct ComponentIndex {
-    pub c_id: usize,
-    pub port_id: usize,
-    direction: Direction,
-}
-
-impl ComponentIndex {
-    pub fn input(c_id: usize, port_id: usize) -> Self {
-        Self { c_id, port_id, direction: Direction::Input }
-    }
-    pub fn output(c_id: usize, port_id: usize) -> Self {
-        Self { c_id, port_id, direction: Direction::Output }
-    }
-    pub fn is_output(&self) -> bool {
-        self.direction == Direction::Output
-    }
-}
-
+use component::{Component, Structural, PortNames, Index, ComponentIndex, Direction};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize)]
 struct YosysJson {
@@ -234,14 +211,6 @@ impl Netname {
             bits: vec![n],
         }
     }
-}
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-enum Direction {
-    #[serde(rename="input")]
-    Input,
-    #[serde(rename="output")]
-    Output,
 }
 
 pub fn from_structural(c: &Structural) -> Result<String, serde_json::Error> {
