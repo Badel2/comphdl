@@ -39,6 +39,68 @@ impl CompInfo {
     }
 }
 
+#[derive(Clone, Debug)]
+struct Assignments {
+    v: Vec<Vec<String>>,
+}
+
+impl Assignments {
+    fn new() -> Self {
+        Self { v: vec![], }
+    }
+    fn add(&mut self, c: &CompInfo) {
+        assert!(c.inputs.len() == c.outputs.len(), "unbalanced assignment");
+        for (left, right) in c.inputs.iter().zip(c.outputs.iter()) {
+            if left == right {
+                continue;
+            }
+            let mut left_pos = None;
+            let mut right_pos = None;
+            for (i, ass) in self.v.iter().enumerate() {
+                for x in ass {
+                    if x == left {
+                        if left_pos.is_some() {
+                            panic!("Duplicate");
+                        }
+                        left_pos = Some(i);
+                    }
+                    if x == right {
+                        if right_pos.is_some() {
+                            panic!("Duplicate");
+                        }
+                        right_pos = Some(i);
+                    }
+                }
+            }
+
+            match (left_pos, right_pos) {
+                (None, None) => {
+                    // New group
+                    self.v.push(vec![left.to_string(), right.to_string()]);
+                }
+                (Some(i), None) => {
+                    // Push right to group which contains left
+                    self.v[i].push(right.to_string());
+                }
+                (None, Some(i)) => {
+                    // Push left to group which contains right 
+                    self.v[i].push(left.to_string());
+                }
+                (Some(i), Some(j)) if i != j => {
+                    // Merge groups: a=b with c=d when b=d
+                    let (i, j) = if i < j { (i, j) } else { (j, i) };
+                    let merge = self.v.swap_remove(j);
+                    self.v[i].extend(merge);
+                }
+                (Some(i), Some(j)) if i == j => {
+                    // Do nothing
+                }
+                _ => panic!("I missed something?"),
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct CompDefinition {
     comp: Vec<usize>, // global component id, including c_zero
@@ -53,7 +115,7 @@ impl CompDefinition {
            other: &[CompInfo]
     ) -> Self {
         let mut comp = vec![];
-        let mut assignments: Vec<Vec<String>> = vec![];
+        let mut assignments = Assignments::new();
         let mut signals = HashMap::new();
         let ref name = c_zero.name;
 
@@ -82,55 +144,7 @@ impl CompDefinition {
 
             // Maybe extract assignments to it own function?
             if c.name == "actually, I'm just an assignment" {
-                assert!(c.inputs.len() == c.outputs.len(), "unbalanced assignment");
-                for (left, right) in c.inputs.iter().zip(c.outputs.iter()) {
-                    if left == right {
-                        continue;
-                    }
-                    let mut left_pos = None;
-                    let mut right_pos = None;
-                    for (i, ass) in assignments.iter().enumerate() {
-                        for x in ass {
-                            if x == left {
-                                if left_pos.is_some() {
-                                    panic!("Duplicate");
-                                }
-                                left_pos = Some(i);
-                            }
-                            if x == right {
-                                if right_pos.is_some() {
-                                    panic!("Duplicate");
-                                }
-                                right_pos = Some(i);
-                            }
-                        }
-                    }
-
-                    match (left_pos, right_pos) {
-                        (None, None) => {
-                            // New group
-                            assignments.push(vec![left.to_string(), right.to_string()]);
-                        }
-                        (Some(i), None) => {
-                            // Push right to group which contains left
-                            assignments[i].push(right.to_string());
-                        }
-                        (None, Some(i)) => {
-                            // Push left to group which contains right 
-                            assignments[i].push(left.to_string());
-                        }
-                        (Some(i), Some(j)) if i != j => {
-                            // Merge groups: a=b with c=d when b=d
-                            let (i, j) = if i < j { (i, j) } else { (j, i) };
-                            let merge = assignments.swap_remove(j);
-                            assignments[i].extend(merge);
-                        }
-                        (Some(i), Some(j)) if i == j => {
-                            // Do nothing
-                        }
-                        _ => panic!("I missed something?"),
-                    }
-                }
+                assignments.add(&c);
                 continue;
             }
             println!("Inserting {:#?}", c);
@@ -149,7 +163,7 @@ impl CompDefinition {
         }
 
         // Apply assignments
-        for ass in assignments.iter() {
+        for ass in assignments.v.iter() {
             let ass2 = &ass[0];
             for ass1 in ass.iter().skip(1) {
                 println!("Replacing {} with {}", ass1, ass2);
