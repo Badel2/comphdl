@@ -18,11 +18,13 @@ impl From<Bit> for Value {
 }
 
 // Returns all the n-bit combinations in order, loops infinitely
+#[allow(dead_code)]
 pub struct InfiniteInputIterator {
     current: Vec<Bit>,
 }
 
 impl InfiniteInputIterator {
+    #[allow(dead_code)]
     pub fn new(n: usize) -> Self {
         Self { current: vec![Bit::L; n] }
     }
@@ -89,3 +91,23 @@ fn next_bit_combination(x: &[Bit]) -> Vec<Bit> {
     y
 }
 
+#[test]
+fn inf_equals_rep_1() {
+    let mut inf = InfiniteInputIterator::new(4);
+    let mut rep = RepInputIterator::new(4, 1);
+
+    for _ in 0..20 {
+        assert_eq!(inf.next(), rep.next());
+    }
+}
+
+#[test]
+fn inf_equals_rep_2() {
+    let mut inf = InfiniteInputIterator::new(4);
+    let mut rep = RepInputIterator::new(4, 2);
+
+    for _ in 0..20 {
+        rep.next();
+        assert_eq!(inf.next(), rep.next());
+    }
+}
