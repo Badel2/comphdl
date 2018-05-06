@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -87,21 +85,6 @@ impl Iterator for RepInputIterator {
 
         Some(a)
     }
-}
-
-fn all_n_bit_combinations(n: usize) -> Vec<Vec<Bit>> {
-    let mut res = vec![];
-    let mut a = vec![Bit::L; n];
-    res.push(a.clone());
-    loop {
-        a = next_bit_combination(&a);
-        res.push(a.clone());
-        if a.iter().all(|&x| x == Bit::H) {
-            break;
-        }
-    }
-
-    res
 }
 
 fn next_bit_combination(x: &[Bit]) -> Vec<Bit> {
@@ -301,47 +284,6 @@ impl Component for ConstantBit {
     }
     fn port_names(&self) -> PortNames {
         PortNames::new(&[], &["o0", "o1", "oX"])
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-struct Or2 {
-    nand_a: Nand,
-    nand_b: Nand,
-    nand_c: Nand,
-}
-
-impl Or2 {
-    fn new() -> Or2 {
-        Or2 {
-            nand_a: Nand::new(1),
-            nand_b: Nand::new(1),
-            nand_c: Nand::new(2),
-        }
-    }
-}
-
-impl Component for Or2 {
-    fn update(&mut self, input: &[Bit]) -> Vec<Bit> {
-        assert_eq!(input.len(), 2);
-        let a = input[0];
-        let b = input[1];
-        let not_a = self.nand_a.update(&[a])[0];
-        let not_b = self.nand_b.update(&[b])[0];
-        // not_a nand not_b == not (not_a or not_b) == a or b
-        self.nand_c.update(&[not_a, not_b])
-    }
-    fn num_inputs(&self) -> usize {
-        2
-    }
-    fn num_outputs(&self) -> usize {
-        1
-    }
-    fn name(&self) -> &str {
-        "OR"
-    }
-    fn box_clone(&self) -> Box<Component> {
-        Box::new((*self).clone())
     }
 }
 
@@ -624,9 +566,6 @@ fn main(){
     let mut args = env::args();
     let _program_name = args.next().unwrap();
     let filename = args.next().unwrap_or(format!("test.txt"));
-    // I fixed that weird bug by recompiling the crate after changing
-    // Demux_1_4 to Demux_1, and then changing it again to Demux_1_4.
-    // Since there is nothing to commit, I add this comment.
     let top = args.next().unwrap_or(format!("Demux_1_4"));
     parse_file(&filename, &top);
 }

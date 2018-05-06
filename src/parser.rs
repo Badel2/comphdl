@@ -47,7 +47,7 @@ pub struct CompDefinition {
 }
 
 impl CompDefinition {
-    fn new(components: &[CompInfo],
+    fn new(_components: &[CompInfo],
            comp_id: &HashMap<String, usize>,
            c_zero: &CompInfo,
            other: &[CompInfo]
@@ -178,7 +178,7 @@ impl CompDefinition {
                        s, con);
             }
             // Remove duplicate connections (can be created using assignments)
-            let to = to_set.drain().map(|(k, v)| k).collect();
+            let to = to_set.drain().map(|(k, _v)| k).collect();
             if from.len() == 1 {
                 connections.insert(from[0].clone(), to);
             } else { // from.len() == 0
@@ -208,7 +208,7 @@ impl ComponentFactory {
         insert_special_components(&mut components, &mut comp_id);
         let mut i = components.len();
 
-        for &(ref c_zero, ref other) in all.iter() {
+        for &(ref c_zero, ref _other) in all.iter() {
             let mut c_zero = c_zero.clone();
             c_zero.verify();
             if let Some(_) = comp_id.get(&c_zero.name) {
@@ -279,8 +279,15 @@ impl ComponentFactory {
         let ref name = self.components[c_id].name;
 
         Some(match name.as_str() {
-            "Nand" => Box::new(Nand::new(num_inputs)),
-            "ConstantBit" => Box::new(ConstantBit::new()),
+            "Nand" => {
+                assert_eq!(num_outputs, 1);
+                Box::new(Nand::new(num_inputs))
+            }
+            "ConstantBit" => {
+                assert_eq!(num_inputs, 0);
+                assert_eq!(num_outputs, 3);
+                Box::new(ConstantBit::new())
+            }
             _ => return None,
         })
     }
@@ -294,7 +301,7 @@ fn insert_special_components(components: &mut Vec<CompInfo>,
     i += 1;
     components.push(CompInfo::new("ConstantBit".into(), vec![], vec![])); // TODO
     comp_id.insert("ConstantBit".into(), i);
-    i += 1;
+    //i += 1;
 }
 
 pub fn parse_file(filename: &str, top: &str) -> Box<Component> {

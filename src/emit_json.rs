@@ -195,7 +195,7 @@ impl Cell {
         for i in 0..n_out {
             let ref pn = port_names.output[i];
             port_directions.insert(format!("{}", pn), Direction::Output);
-            let jj = ComponentIndex::output(c_id, i);
+            //let jj = ComponentIndex::output(c_id, i);
             let mut yos_addr = vec![];
             // TODO: if connections is empty, insert dummy port
             for x in connections[i].iter() {
@@ -227,6 +227,7 @@ struct Netname {
 }
 
 impl Netname {
+    #[allow(dead_code)]
     fn new(n: usize) -> Netname {
         Netname {
             hide_name: 1,
