@@ -41,6 +41,9 @@ impl CompInfo {
 
 #[derive(Clone, Debug)]
 struct Assignments {
+    // Each entry in v is a vector of signals that are equivalent:
+    // a = b; c = d; will create v = [[a, b], [c, d]]
+    // And if we add a = c; it will become v = [[a, b, c, d]]
     v: Vec<Vec<String>>,
 }
 
@@ -93,7 +96,7 @@ impl Assignments {
                     self.v[i].extend(merge);
                 }
                 (Some(i), Some(j)) if i == j => {
-                    // Do nothing
+                    // Do nothing, they are already in the same group
                 }
                 _ => panic!("I missed something?"),
             }
@@ -142,7 +145,7 @@ impl CompDefinition {
             // Prevent recursive definitions
             assert!(name != &c.name, format!("Recursive definition of component {}", name));
 
-            // Maybe extract assignments to it own function?
+            // Process assignments
             if c.name == "actually, I'm just an assignment" {
                 assignments.add(&c);
                 continue;
