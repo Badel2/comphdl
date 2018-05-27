@@ -103,7 +103,7 @@ impl Component for Nand {
         1
     }
     fn name(&self) -> &str {
-        "NAND"
+        "Nand"
     }
     fn box_clone(&self) -> Box<Component> {
         Box::new((*self).clone())
@@ -131,7 +131,7 @@ impl Component for ConstantBit {
         3
     }
     fn name(&self) -> &str {
-        "GND-VCC"
+        "ConstantBit"
     }
     fn box_clone(&self) -> Box<Component> {
         Box::new((*self).clone())
