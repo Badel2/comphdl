@@ -104,16 +104,21 @@ impl Assignments {
     }
 }
 
+// Global component id
+// Unique for each type of component: all the Nands have the same id
+#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash, Default)]
+pub struct CompId(usize);
+
 #[derive(Debug, Clone)]
 pub struct CompDefinition {
-    comp: Vec<usize>, // global component id, including c_zero
+    comp: Vec<CompId>, // global component id, including c_zero
     connections: HashMap<ComponentIndex, Vec<ComponentIndex>>, // connections[local_comp_id][output_id]
     generics: HashMap<usize, (usize, usize)>,
 }
 
 impl CompDefinition {
     fn new(_components: &[CompInfo],
-           comp_id: &HashMap<String, usize>,
+           comp_id: &HashMap<String, CompId>,
            c_zero: &CompInfo,
            other: &[CompInfo]
     ) -> Self {
@@ -212,8 +217,8 @@ impl CompDefinition {
 #[derive(Debug, Clone)]
 pub struct ComponentFactory {
     components: Vec<CompInfo>,
-    comp_id: HashMap<String, usize>,
-    comp_def: HashMap<usize, CompDefinition>,
+    comp_id: HashMap<String, CompId>,
+    comp_def: HashMap<CompId, CompDefinition>,
 }
 
 impl ComponentFactory {
@@ -231,7 +236,7 @@ impl ComponentFactory {
             if let Some(_) = comp_id.get(&c_zero.name) {
                 panic!("Component name already exists");
             }
-            comp_id.insert(c_zero.name.clone(), i);
+            comp_id.insert(c_zero.name.clone(), CompId(i));
             components.push(c_zero);
 
             i += 1;
@@ -250,12 +255,13 @@ impl ComponentFactory {
         let c_id = self.comp_id.get(name).expect("This component does not exist");
         self.create(*c_id)
     }
-    fn create(&self, c_id: usize) -> Box<Component> {
-        let ref inputs = self.components[c_id].inputs;
-        let ref outputs = self.components[c_id].outputs;
-        let ref name = self.components[c_id].name;
+    fn create(&self, c_id: CompId) -> Box<Component> {
+        let id = c_id.0;
+        let ref inputs = self.components[id].inputs;
+        let ref outputs = self.components[id].outputs;
+        let ref name = self.components[id].name;
 
-        println!("Creating component with id {}: {}", c_id, name);
+        println!("Creating component with id {}: {}", id, name);
         let ref def = self.comp_def[&c_id];
 
         let c_zero = CompIo::c_zero(inputs.len(), outputs.len());
@@ -269,7 +275,7 @@ impl ComponentFactory {
             //assert!(&self.components[new_id].name != name);
             let (num_i, num_o) = def.generics[&local_id];
             let boxed_gate = if let Some(c) = self.create_builtin(new_id, num_i, num_o) {
-                println!("DEBUG: Created builting gate {}", self.components[new_id].name);
+                println!("DEBUG: Created builting gate {}", self.components[new_id.0].name);
                 c
             } else {
                 self.create(new_id)
@@ -288,12 +294,12 @@ impl ComponentFactory {
         }
 
         let pn = PortNames::new_vec(inputs.clone(), outputs.clone());
-        let gate = Structural::new(c, inputs.len(), outputs.len(), &self.components[c_id].name, pn);
+        let gate = Structural::new(c, inputs.len(), outputs.len(), &self.components[id].name, pn);
 
         Box::new(gate)
     }
-    fn create_builtin(&self, c_id: usize, num_inputs: usize, num_outputs: usize) -> Option<Box<Component>> {
-        let ref name = self.components[c_id].name;
+    fn create_builtin(&self, c_id: CompId, num_inputs: usize, num_outputs: usize) -> Option<Box<Component>> {
+        let ref name = self.components[c_id.0].name;
 
         Some(match name.as_str() {
             "Nand" => {
@@ -311,13 +317,13 @@ impl ComponentFactory {
 }
 
 fn insert_special_components(components: &mut Vec<CompInfo>,
-                             comp_id: &mut HashMap<String, usize>) {
+                             comp_id: &mut HashMap<String, CompId>) {
     let mut i = components.len();
     components.push(CompInfo::new("Nand".into(), vec![], vec![])); // TODO
-    comp_id.insert("Nand".into(), i);
+    comp_id.insert("Nand".into(), CompId(i));
     i += 1;
     components.push(CompInfo::new("ConstantBit".into(), vec![], vec![])); // TODO
-    comp_id.insert("ConstantBit".into(), i);
+    comp_id.insert("ConstantBit".into(), CompId(i));
     //i += 1;
 }
 
