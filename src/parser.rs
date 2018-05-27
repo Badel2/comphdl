@@ -323,10 +323,9 @@ fn insert_special_components(components: &mut Vec<CompInfo>,
 
 pub fn parse_file(filename: &str, top: &str) -> Box<Component> {
     let file = File::open(filename).expect("Unable to open file");
-    let mut reader = BufReader::new(file);
-    let mut buffer = vec![];
-    reader.read_to_end(&mut buffer).unwrap();
-    let bs = String::from_utf8(buffer).unwrap();
+    let mut buf_reader = BufReader::new(file);
+    let mut bs = String::new();
+    buf_reader.read_to_string(&mut bs).unwrap();
     /*
     let parsed = comphdl1::FileParser::new().parse(&bs).unwrap();
     for c in parsed {
