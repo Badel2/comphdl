@@ -117,7 +117,7 @@ pub struct CompDefinition {
 }
 
 impl CompDefinition {
-    fn new(_components: &[CompInfo],
+    fn new(_components: &HashMap<CompId, CompInfo>,
            comp_id: &HashMap<String, CompId>,
            c_zero: &CompInfo,
            other: &[CompInfo]
@@ -216,14 +216,14 @@ impl CompDefinition {
 
 #[derive(Debug, Clone)]
 pub struct ComponentFactory {
-    components: Vec<CompInfo>,
     comp_id: HashMap<String, CompId>,
+    components: HashMap<CompId, CompInfo>,
     comp_def: HashMap<CompId, CompDefinition>,
 }
 
 impl ComponentFactory {
     fn new(all: Vec<(CompInfo, Vec<CompInfo>)>) -> Self {
-        let mut components = vec![];
+        let mut components = HashMap::new();
         let mut comp_id = HashMap::new();
         let mut comp_def = HashMap::new();
 
@@ -237,7 +237,7 @@ impl ComponentFactory {
                 panic!("Component name already exists");
             }
             comp_id.insert(c_zero.name.clone(), CompId(i));
-            components.push(c_zero);
+            components.insert(CompId(i), c_zero);
 
             i += 1;
         }
@@ -256,12 +256,11 @@ impl ComponentFactory {
         self.create(*c_id)
     }
     fn create(&self, c_id: CompId) -> Box<Component> {
-        let id = c_id.0;
-        let ref inputs = self.components[id].inputs;
-        let ref outputs = self.components[id].outputs;
-        let ref name = self.components[id].name;
+        let ref inputs = self.components[&c_id].inputs;
+        let ref outputs = self.components[&c_id].outputs;
+        let ref name = self.components[&c_id].name;
 
-        println!("Creating component with id {}: {}", id, name);
+        println!("Creating component with id {}: {}", c_id.0, name);
         let ref def = self.comp_def[&c_id];
 
         let c_zero = CompIo::c_zero(inputs.len(), outputs.len());
@@ -275,7 +274,7 @@ impl ComponentFactory {
             //assert!(&self.components[new_id].name != name);
             let (num_i, num_o) = def.generics[&local_id];
             let boxed_gate = if let Some(c) = self.create_builtin(new_id, num_i, num_o) {
-                println!("DEBUG: Created builting gate {}", self.components[new_id.0].name);
+                println!("DEBUG: Created builting gate {}", self.components[&new_id].name);
                 c
             } else {
                 self.create(new_id)
@@ -294,12 +293,12 @@ impl ComponentFactory {
         }
 
         let pn = PortNames::new_vec(inputs.clone(), outputs.clone());
-        let gate = Structural::new(c, inputs.len(), outputs.len(), &self.components[id].name, pn);
+        let gate = Structural::new(c, inputs.len(), outputs.len(), &self.components[&c_id].name, pn);
 
         Box::new(gate)
     }
     fn create_builtin(&self, c_id: CompId, num_inputs: usize, num_outputs: usize) -> Option<Box<Component>> {
-        let ref name = self.components[c_id.0].name;
+        let ref name = self.components[&c_id].name;
 
         Some(match name.as_str() {
             "Nand" => {
@@ -316,13 +315,13 @@ impl ComponentFactory {
     }
 }
 
-fn insert_special_components(components: &mut Vec<CompInfo>,
+fn insert_special_components(components: &mut HashMap<CompId, CompInfo>,
                              comp_id: &mut HashMap<String, CompId>) {
     let mut i = components.len();
-    components.push(CompInfo::new("Nand".into(), vec![], vec![])); // TODO
+    components.insert(CompId(i), CompInfo::new("Nand".into(), vec![], vec![])); // TODO
     comp_id.insert("Nand".into(), CompId(i));
     i += 1;
-    components.push(CompInfo::new("ConstantBit".into(), vec![], vec![])); // TODO
+    components.insert(CompId(i), CompInfo::new("ConstantBit".into(), vec![], vec![])); // TODO
     comp_id.insert("ConstantBit".into(), CompId(i));
     //i += 1;
 }
