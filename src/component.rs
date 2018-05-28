@@ -21,7 +21,7 @@ pub trait Component: std::fmt::Debug {
         PortNames::default(self.num_inputs(), self.num_outputs())
     }
     fn clone_as_structural(&self) -> Option<Structural> {
-        None
+        Some(Structural::new_wrap(self.box_clone()))
     }
     fn box_clone(&self) -> Box<Component>;
 }
@@ -193,6 +193,25 @@ impl Structural {
         assert_eq!(port_names.output.len(), num_outputs);
         // TODO: check that all the connections are valid
         let name = name.to_string();
+        Structural { components, num_inputs, num_outputs, name, port_names }
+    }
+    // Create a Structural from one Component
+    pub fn new_wrap(component: Box<Component>) -> Structural {
+        let port_names = component.port_names();
+        let num_inputs = port_names.input.len();
+        let num_outputs = port_names.output.len();
+        let name = format!("w{}", component.name());
+        let mut c_zero = CompIo::c_zero(num_inputs, num_outputs);
+        let mut c_one = CompIo::new(component);
+        
+        for i in 0..num_inputs {
+            c_zero.add_connection(i, Index::new(1, i));
+        }
+        for i in 0..num_outputs {
+            c_one.add_connection(i, Index::new(0, i));
+        }
+
+        let components = vec![c_zero, c_one];
         Structural { components, num_inputs, num_outputs, name, port_names }
     }
     fn propagate(&mut self, c_id: usize) {
