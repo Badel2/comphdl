@@ -274,7 +274,7 @@ impl ComponentFactory {
             //assert!(&self.components[new_id].name != name);
             let (num_i, num_o) = def.generics[&local_id];
             let boxed_gate = if let Some(c) = self.create_builtin(new_id, num_i, num_o) {
-                println!("DEBUG: Created builting gate {}", self.components[&new_id].name);
+                println!("DEBUG: Created builtin gate {}", self.components[&new_id].name);
                 c
             } else {
                 self.create(new_id)
