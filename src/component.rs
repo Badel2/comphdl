@@ -178,6 +178,7 @@ impl PortNames {
 pub struct Structural {
     pub components: Vec<CompIo>,
     pub info: Rc<CompInfo>,
+    pub connections: Vec<Vec<Vec<Index>>>,
 }
 
 impl Structural {
@@ -185,7 +186,11 @@ impl Structural {
         // TODO: check that everything is valid
         assert_eq!(components[0].input.len(), info.outputs.len());
         assert_eq!(components[0].output.len(), info.inputs.len());
-        Structural { components, info }
+        let mut connections = vec![];
+        for c in &components {
+            connections.push(c.connections.clone());
+        }
+        Structural { components, info, connections }
     }
     pub fn new_legacy(components: Vec<CompIo>, num_inputs: usize, num_outputs: usize,
            name: &str, port_names: PortNames) -> Structural {
@@ -201,7 +206,7 @@ impl Structural {
         let PortNames { input, output } = port_names;
         let info = Rc::new(CompInfo::new(name, input, output));
 
-        Structural { components, info }
+        Structural::new(components, info)
     }
     // Create a Structural from one Component
     pub fn new_wrap(component: Box<Component>) -> Structural {
@@ -224,8 +229,7 @@ impl Structural {
         Structural::new_legacy(components, num_inputs, num_outputs, &name, port_names)
     }
     fn propagate(&mut self, c_id: usize) {
-        // TODO: avoid this clone
-        let connections = self.components[c_id].connections.clone();
+        let connections = &self.connections[c_id];
         for (out_id, to) in connections.iter().enumerate() {
             for i in to {
                 self.components[i.comp_id]
