@@ -182,7 +182,13 @@ pub struct Structural {
 }
 
 impl Structural {
-    pub fn new(components: Vec<CompIo>, num_inputs: usize, num_outputs: usize,
+    pub fn new(components: Vec<CompIo>, info: Rc<CompInfo>, comp_def: Rc<CompDefinition>) -> Structural {
+        // TODO: check that everything is valid
+        assert_eq!(components[0].input.len(), info.outputs.len());
+        assert_eq!(components[0].output.len(), info.inputs.len());
+        Structural { components, info, comp_def }
+    }
+    pub fn new_legacy(components: Vec<CompIo>, num_inputs: usize, num_outputs: usize,
            name: &str, port_names: PortNames) -> Structural {
         // Component 0 must have been created using CompIo::c_zero
         assert_eq!(components[0].input.len(), num_outputs);
@@ -228,7 +234,7 @@ impl Structural {
 
         let components = vec![c_zero, c_one];
 
-        Structural::new(components, num_inputs, num_outputs, &name, port_names)
+        Structural::new_legacy(components, num_inputs, num_outputs, &name, port_names)
     }
     fn propagate(&mut self, c_id: usize) {
         // TODO: avoid this clone

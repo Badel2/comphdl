@@ -1,4 +1,4 @@
-use component::{ComponentIndex, Index, Component, CompIo, PortNames, Structural, Nand, ConstantBit};
+use component::{ComponentIndex, Index, Component, CompIo, Structural, Nand, ConstantBit};
 use comphdl1;
 use std::io::{BufReader, Read};
 use std::fs::File;
@@ -299,8 +299,7 @@ impl ComponentFactory {
             }
         }
 
-        let pn = PortNames::new_vec(inputs.clone(), outputs.clone());
-        let gate = Structural::new(c, inputs.len(), outputs.len(), &self.components[&c_id].name, pn);
+        let gate = Structural::new(c, Rc::clone(&self.components[&c_id]), Rc::clone(&self.comp_def[&c_id]));
 
         Box::new(gate)
     }
