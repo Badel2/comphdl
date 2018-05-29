@@ -1,6 +1,6 @@
 use vcd;
 use bit::Bit;
-use parser::{CompInfo, CompDefinition};
+use parser::CompInfo;
 use std;
 use std::io;
 use std::collections::HashMap;
@@ -178,15 +178,14 @@ impl PortNames {
 pub struct Structural {
     pub components: Vec<CompIo>,
     pub info: Rc<CompInfo>,
-    pub comp_def: Rc<CompDefinition>,
 }
 
 impl Structural {
-    pub fn new(components: Vec<CompIo>, info: Rc<CompInfo>, comp_def: Rc<CompDefinition>) -> Structural {
+    pub fn new(components: Vec<CompIo>, info: Rc<CompInfo>) -> Structural {
         // TODO: check that everything is valid
         assert_eq!(components[0].input.len(), info.outputs.len());
         assert_eq!(components[0].output.len(), info.inputs.len());
-        Structural { components, info, comp_def }
+        Structural { components, info }
     }
     pub fn new_legacy(components: Vec<CompIo>, num_inputs: usize, num_outputs: usize,
            name: &str, port_names: PortNames) -> Structural {
@@ -201,20 +200,8 @@ impl Structural {
         let name = name.to_string();
         let PortNames { input, output } = port_names;
         let info = Rc::new(CompInfo::new(name, input, output));
-        let mut connections = vec![];
-        for c in &components {
-            connections.push(c.connections.clone());
-        }
 
-        let mut c2 = HashMap::new();
-        for (from_comp, vv) in connections.into_iter().enumerate() {
-            for (from_port, v) in vv.into_iter().enumerate() {
-                let to = v.into_iter().map(|x| ComponentIndex::input(x.comp_id, x.input_id)).collect();
-                c2.insert(ComponentIndex::output(from_comp, from_port), to);
-            }
-        }
-        let comp_def = Rc::new(CompDefinition::new_but_only_connections(c2));
-        Structural { components, info, comp_def }
+        Structural { components, info }
     }
     // Create a Structural from one Component
     pub fn new_wrap(component: Box<Component>) -> Structural {

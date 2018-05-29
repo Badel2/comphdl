@@ -299,7 +299,7 @@ impl ComponentFactory {
             }
         }
 
-        let gate = Structural::new(c, Rc::clone(&self.components[&c_id]), Rc::clone(&self.comp_def[&c_id]));
+        let gate = Structural::new(c, Rc::clone(&self.components[&c_id]));
 
         Box::new(gate)
     }
