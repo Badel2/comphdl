@@ -118,9 +118,6 @@ pub struct CompDefinition {
 }
 
 impl CompDefinition {
-    pub fn new_but_only_connections(connections: HashMap<ComponentIndex, Vec<ComponentIndex>>) -> Self {
-        CompDefinition { comp: vec![], connections, generics: HashMap::new(), }
-    }
     fn new(_components: &HashMap<CompId, CompInfo>,
            comp_id: &HashMap<String, CompId>,
            c_zero: &CompInfo,
