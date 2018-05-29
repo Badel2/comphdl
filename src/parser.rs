@@ -3,6 +3,7 @@ use comphdl1;
 use std::io::{BufReader, Read};
 use std::fs::File;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct CompInfo {
@@ -217,8 +218,8 @@ impl CompDefinition {
 #[derive(Debug, Clone)]
 pub struct ComponentFactory {
     comp_id: HashMap<String, CompId>,
-    components: HashMap<CompId, CompInfo>,
-    comp_def: HashMap<CompId, CompDefinition>,
+    components: HashMap<CompId, Rc<CompInfo>>,
+    comp_def: HashMap<CompId, Rc<CompDefinition>>,
 }
 
 impl ComponentFactory {
@@ -247,6 +248,9 @@ impl ComponentFactory {
             let g_id = comp_id[&c_zero.name];
             comp_def.insert(g_id, def);
         }
+
+        let components = components.into_iter().map(|(k, v)| (k, Rc::new(v))).collect();
+        let comp_def = comp_def.into_iter().map(|(k, v)| (k, Rc::new(v))).collect();
 
         Self { components, comp_id, comp_def }
     }
