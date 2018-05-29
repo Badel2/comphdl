@@ -1,8 +1,10 @@
 use vcd;
 use bit::Bit;
+use parser::{CompInfo, CompDefinition};
 use std;
 use std::io;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 static VCD_SHOW_NAND: bool = true;
 
@@ -175,10 +177,8 @@ impl PortNames {
 #[derive(Debug, Clone)]
 pub struct Structural {
     pub components: Vec<CompIo>,
-    pub num_inputs: usize,
-    pub num_outputs: usize,
-    pub name: String,
-    pub port_names: PortNames,
+    pub info: Rc<CompInfo>,
+    pub comp_def: Rc<CompDefinition>,
 }
 
 impl Structural {
@@ -193,7 +193,22 @@ impl Structural {
         assert_eq!(port_names.output.len(), num_outputs);
         // TODO: check that all the connections are valid
         let name = name.to_string();
-        Structural { components, num_inputs, num_outputs, name, port_names }
+        let PortNames { input, output } = port_names;
+        let info = Rc::new(CompInfo::new(name, input, output));
+        let mut connections = vec![];
+        for c in &components {
+            connections.push(c.connections.clone());
+        }
+
+        let mut c2 = HashMap::new();
+        for (from_comp, vv) in connections.into_iter().enumerate() {
+            for (from_port, v) in vv.into_iter().enumerate() {
+                let to = v.into_iter().map(|x| ComponentIndex::input(x.comp_id, x.input_id)).collect();
+                c2.insert(ComponentIndex::output(from_comp, from_port), to);
+            }
+        }
+        let comp_def = Rc::new(CompDefinition::new_but_only_connections(c2));
+        Structural { components, info, comp_def }
     }
     // Create a Structural from one Component
     pub fn new_wrap(component: Box<Component>) -> Structural {
@@ -212,7 +227,8 @@ impl Structural {
         }
 
         let components = vec![c_zero, c_one];
-        Structural { components, num_inputs, num_outputs, name, port_names }
+
+        Structural::new(components, num_inputs, num_outputs, &name, port_names)
     }
     fn propagate(&mut self, c_id: usize) {
         // TODO: avoid this clone
@@ -264,13 +280,13 @@ impl Component for Structural {
         self.output()
     }
     fn num_inputs(&self) -> usize {
-        self.num_inputs
+        self.info.inputs.len()
     }
     fn num_outputs(&self) -> usize {
-        self.num_outputs
+        self.info.outputs.len()
     }
     fn name(&self) -> &str {
-        &self.name
+        &self.info.name
     }
     fn write_internal_components(&self, writer: &mut vcd::Writer, j: &mut u64) -> io::Result<VcdSignalHandle> {
         let mut vh = VcdSignalHandle { id: HashMap::new() };
@@ -279,14 +295,14 @@ impl Component for Structural {
             let mut vi = InstanceIndex::new(*j as usize, 0);
             let instance_name = format!("{}-{}", self.name(), j);
             writer.add_module(&instance_name)?;
-            for i in 0..self.num_inputs {
-                let ref port_name = self.port_names.input[i];
+            for i in 0..self.num_inputs() {
+                let ref port_name = self.info.inputs[i];
                 vh.id.insert(vi, writer.add_wire(1,
                     &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
             }
-            for i in 0..self.num_outputs {
-                let ref port_name = self.port_names.output[i];
+            for i in 0..self.num_outputs() {
+                let ref port_name = self.info.outputs[i];
                 vh.id.insert(vi, writer.add_wire(1,
                     &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
@@ -349,7 +365,7 @@ impl Component for Structural {
         Ok(())
     }
     fn port_names(&self) -> PortNames {
-        self.port_names.clone()
+        PortNames::new_vec(self.info.inputs.clone(), self.info.outputs.clone())
     }
     fn clone_as_structural(&self) -> Option<Structural> {
         Some(self.clone())
@@ -371,7 +387,7 @@ impl CompIo {
     pub fn new(comp: Box<Component>) -> CompIo {
         let input = vec![Bit::X; comp.num_inputs()];
         let output = vec![Bit::X; comp.num_outputs()];
-        let connections = vec![vec![]; comp.num_outputs()];
+        let connections = vec![vec![]; comp.num_inputs()];
         CompIo {
             comp,
             input,

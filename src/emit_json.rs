@@ -40,14 +40,14 @@ impl Module {
         let mut pin_addr_to_yosys_addr: HashMap<ComponentIndex, usize> = HashMap::new();
         let mut ya = 2; // start with address 2 because 0 and 1 are logical 0 and 1
         for i in 0..num_inputs {
-            let ref port_name = c.port_names.input[i];
+            let ref port_name = c.port_names().input[i];
             ports.insert(format!("{}", port_name), Port::input(ya));
             let pa = ComponentIndex::input(0, i);
             pin_addr_to_yosys_addr.insert(pa, ya);
             ya += 1;
         }
         for i in 0..num_outputs {
-            let ref port_name = c.port_names.output[i];
+            let ref port_name = c.port_names().output[i];
             ports.insert(format!("{}", port_name), Port::output(ya));
             let pa = ComponentIndex::output(0, i);
             pin_addr_to_yosys_addr.insert(pa, ya);
@@ -87,8 +87,8 @@ impl Module {
             for x in to {
                 if x.comp_id == 0 {
                     let a = ComponentIndex::output(x.comp_id, x.input_id);
-                    let ref port_name = c.port_names.output[x.input_id];
-                    let ref port_name_in = c.port_names.input[i];
+                    let ref port_name = c.port_names().output[x.input_id];
+                    let ref port_name_in = c.port_names().input[i];
                     let ex = ports[port_name_in].bits.clone();
                     ports.get_mut(port_name).unwrap().bits = ex;
                     *pin_addr_to_yosys_addr.get_mut(&a).unwrap() = pin_addr_to_yosys_addr[&pa];
