@@ -10,6 +10,10 @@ static VCD_SHOW_NAND: bool = true;
 
 pub trait Component: std::fmt::Debug {
     fn update(&mut self, input: &[Bit]) -> Vec<Bit>;
+    // Does this component need an update even if the inputs haven't changed?
+    fn needs_update(&self) -> bool {
+        true
+    }
     fn num_inputs(&self) -> usize;
     fn num_outputs(&self) -> usize;
     fn name(&self) -> &str;
@@ -98,6 +102,9 @@ impl Component for Nand {
 
         vec![x]
     }
+    fn needs_update(&self) -> bool {
+        false // The output depends only on the inputs
+    }
     fn num_inputs(&self) -> usize {
         self.num_inputs
     }
@@ -125,6 +132,9 @@ impl Component for ConstantBit {
     fn update(&mut self, input: &[Bit]) -> Vec<Bit> {
         assert!(input.is_empty());
         vec![Bit::L, Bit::H, Bit::X]
+    }
+    fn needs_update(&self) -> bool {
+        false // All components must be updated at least once
     }
     fn num_inputs(&self) -> usize {
         0
@@ -179,6 +189,7 @@ pub struct Structural {
     pub components: Vec<CompIo>,
     pub info: Rc<CompInfo>,
     pub connections: Vec<Vec<Vec<Index>>>,
+    pub component_dirty: Vec<bool>,
 }
 
 impl Structural {
@@ -190,7 +201,9 @@ impl Structural {
         for c in &components {
             connections.push(c.connections.clone());
         }
-        Structural { components, info, connections }
+        let component_dirty = vec![true; components.len()];
+
+        Structural { components, info, connections, component_dirty }
     }
     pub fn new_legacy(components: Vec<CompIo>, num_inputs: usize, num_outputs: usize,
            name: &str, port_names: PortNames) -> Structural {
@@ -232,33 +245,45 @@ impl Structural {
         let connections = &self.connections[c_id];
         for (out_id, to) in connections.iter().enumerate() {
             for i in to {
-                self.components[i.comp_id]
-                    .input[i.input_id] = self.components[c_id].output[out_id];
+                if self.components[i.comp_id]
+                    .input[i.input_id] != self.components[c_id].output[out_id] {
+
+                    self.components[i.comp_id]
+                        .input[i.input_id] = self.components[c_id].output[out_id];
+                    self.component_dirty[i.comp_id] = true;
+                }
             }
         }
     }
     fn propagate_input(&mut self, input: &[Bit]) {
         // The input is the output when seen from inside
-        self.components[0].output = input.to_vec();
-        self.propagate(0);
+        if self.components[0].output == input {
+            // Input (output) hasn't changed:
+            self.components[0].output_changed = false;
+        } else {
+            self.components[0].output = input.to_vec();
+            self.propagate(0);
+        }
     }
     fn output(&self) -> Vec<Bit> {
         self.components[0].input.clone()
     }
     fn update_components(&mut self) {
         for c in 1..self.components.len() {
-            // Magic pattern matching to make the borrow checker happy
-            let CompIo {
-                ref mut comp,
-                ref input,
-                ref mut output,
-                connections: _
-            } = self.components[c];
-            *output = comp.update(input);
+            // Iterate over dirty components only
+            if self.component_dirty[c] == false {
+                continue;
+            }
+            self.components[c].update();
+            self.component_dirty[c] = self.components[c].comp.needs_update();
         }
     }
     fn propagate_signals(&mut self) {
         for c in 1..self.components.len() {
+            // Don't propagate if the output hasn't changed
+            if self.components[c].output_changed == false {
+                continue;
+            }
             self.propagate(c);
         }
     }
@@ -275,6 +300,10 @@ impl Component for Structural {
         self.propagate_signals();
         // Return the component output
         self.output()
+    }
+    fn needs_update(&self) -> bool {
+        // a structural needs an update if any of its components does
+        self.component_dirty.iter().skip(1).any(|&x| x == true)
     }
     fn num_inputs(&self) -> usize {
         self.info.inputs.len()
@@ -378,6 +407,7 @@ pub struct CompIo {
     input: Vec<Bit>,
     output: Vec<Bit>,
     pub connections: Vec<Vec<Index>>,
+    output_changed: bool,
 }
 
 impl CompIo {
@@ -390,6 +420,7 @@ impl CompIo {
             input,
             output,
             connections,
+            output_changed: true,
         }
     }
     pub fn c_zero(num_inputs: usize, num_outputs: usize) -> CompIo {
@@ -402,10 +433,20 @@ impl CompIo {
             input,
             output,
             connections,
+            output_changed: true,
         }
     }
     pub fn add_connection(&mut self, output_id: usize, to: Index) {
         self.connections[output_id].push(to);
+    }
+    pub fn update(&mut self) {
+        let new_output = self.comp.update(&self.input);
+        if new_output == self.output {
+            self.output_changed = false;
+        } else {
+            self.output = new_output;
+            self.output_changed = true;
+        }
     }
 }
 
