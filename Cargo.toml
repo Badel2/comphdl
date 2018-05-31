@@ -1,5 +1,5 @@
 [package]
-name = "comphdl-02"
+name = "comphdl"
 version = "0.1.0"
 authors = ["Badel2 <2badel2@gmail.com>"]
 build = "build.rs"
