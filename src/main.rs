@@ -1,3 +1,8 @@
+#![cfg_attr(feature = "stdweb", feature(proc_macro))]
+
+#[macro_use]
+extern crate stdweb;
+
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -10,6 +15,11 @@ mod bit;
 mod component;
 mod simulation;
 pub mod comphdl1;
+
+#[cfg(feature = "stdweb")]
+pub mod js_gui;
+#[cfg(feature = "stdweb")]
+pub use js_gui::*;
 
 use bit::RepInputIterator;
 use component::Component;
@@ -41,6 +51,11 @@ fn parse_file(filename: &str, top: &str) {
     yosys_netlist(&*gate);
 }
 
+// Do not start automatically when loaded from js
+#[cfg(feature = "stdweb")]
+fn main(){}
+
+#[cfg(not(feature = "stdweb"))]
 fn main(){
     // Usage: cargo run (for default arguments)
     //        cargo run -- test.txt Buf123 (filename, component name)

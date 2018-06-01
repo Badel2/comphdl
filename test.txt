@@ -50,3 +50,11 @@ component AssignTest(a) -> (a0, a1, a2, a3) {
     a = b2;
     b2 = b1;
 }
+
+component DLatch(enable, d) -> q {
+    Not(enable) -> n_enable;
+    Nand(enable, d) -> ed;
+    Nand(n_enable, n_d) -> ned;
+    Nand(n_enable, n_q) -> q;
+    Not(q) -> n_q;
+}
