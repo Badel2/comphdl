@@ -254,7 +254,7 @@ impl ComponentFactory {
 
         Self { components, comp_id, comp_def }
     }
-    fn create_named(&self, name: &str) -> Box<Component> {
+    pub fn create_named(&self, name: &str) -> Box<Component> {
         println!("Creating component {}", name);
         let c_id = self.comp_id.get(name).expect("This component does not exist");
         self.create(*c_id)
@@ -327,6 +327,13 @@ fn insert_special_components(components: &mut HashMap<CompId, CompInfo>,
     components.insert(CompId(i), CompInfo::new("ConstantBit".into(), vec![], vec![])); // TODO
     comp_id.insert("ConstantBit".into(), CompId(i));
     //i += 1;
+}
+
+pub fn parse_str(bs: &str) -> ComponentFactory {
+    let c = comphdl1::FileParser::new().parse(&bs).unwrap();
+    let s = ComponentFactory::new(c);
+
+    s
 }
 
 pub fn parse_file(filename: &str, top: &str) -> Box<Component> {

@@ -3,12 +3,57 @@
     <head>
         <meta charset="utf-8">
         <title>CompHDL demo</title>
+        <style>
+            body {
+                background-color: #eee;
+            }
+            input {
+                font-family: monospace;
+            }
+            textarea {
+                font-family: monospace;
+            }
+            .code {
+                width: 95%;
+            }
+        </style>
     </head>
     <body>
+        <div id="loading_wasm" style="display: block; color: #F00;">
+            WARNING: LOADING WASM... (if this message persists for a long time,
+            check if your browser supports WASM and disable any adblockers)
+        </div>
+        <div id="loaded_wasm" style="display: none; color: #0F0;">
+            WASM MODULE SUCCESSFULLY LOADED
+        </div>
+        <div style="float:left; width:50%; height:90vh">
+            <div>
+              <input type="text" id="top_name" placeholder="Top component name"></input>
+              <button id="comphdl_start" onClick="runGui()">RUN!</button>
+            </div>
+            <div>
+              <div id="top_input"></div>
+              <div id="top_output"></div>
+            </div>
+            <div style="height:100%">
+              <textarea id="comphdl_definition" class="code" style="height:100%;"></textarea>
+            </div>
+        </div>
+        <div style="float:right; width:50%; height:90vh">
+            DEBUG OUTPUT:
+            <textarea id="top_output_debug" class="code" style="height:100%;" placeholder="Simulation output" readonly></textarea>
+        </div>
         <script src="comphdl.js"></script>
         <script>
+            function runGui() {
+                Rust.comphdl.then( function( comphdl ) {
+                    // TODO: check if a thread is already running and kill it
+                    comphdl.run_js_gui();
+                });
+            }
             Rust.comphdl.then( function( comphdl ) {
-                comphdl.run_js_gui();
+                document.getElementById("loading_wasm").style.display = "none";
+                document.getElementById("loaded_wasm").style.display = "block";
             });
         </script>
     </body>
