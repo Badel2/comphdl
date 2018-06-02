@@ -31,30 +31,112 @@
               <input type="text" id="top_name" placeholder="Top component name"></input>
               <button id="comphdl_start" onClick="runGui()">RUN!</button>
             </div>
+            <div id="simulation_controls" style="display: none;">
+              <div>
+                <input type="text" id="tick_display">
+                <input type="text" id="target_ticks_per_second">
+                <input type="checkbox" id="check_run_step"> running step
+                <input type="checkbox" id="check_run_forever"> running forever
+                <input type="checkbox" id="check_alive"> rust alive
+                <input type="checkbox" id="check_show_debug" checked> show debug
+              </div>
+              <div>
+                <button id="pause_simulation" onClick="pauseSimulation()">PAUSE</button>
+                <button id="run_step" onClick="runStep()">ONE STEP</button>
+                <button id="run_forever" onClick="resumeSimulation()">RESUME</button>
+                <button id="stop_simulation" onClick="stopSimulation()">STOP</button>
+              </div>
+            </div>
             <div>
               <div id="top_input"></div>
               <div id="top_output"></div>
             </div>
             <div style="height:100%">
-              <textarea id="comphdl_definition" class="code" style="height:100%;"></textarea>
+              <textarea id="comphdl_definition" class="code" style="height:100%;">
+component Buf (d) -> q { d=q; }
+component Not (a) -> q { Nand(a) -> q; }
+
+component And3(a, b, c) -> x {
+    Nand(a, b, c) -> n_x;
+    Not(n_x) -> x;
+}
+
+component Mux_4_1(s1, s0, a, b, c, d) -> y {
+    Buf  (s1) -> d_s1;
+    Buf  (s0) -> d_s0;
+    Not  (s1) -> n_s1;
+    Not  (s0) -> n_s0;
+    Buf(a) -> d_a; Buf(b) -> d_b; Buf(c) -> d_c; Buf(d) -> d_d;
+    Nand (n_s0, n_s1, d_a) -> sel00;
+    Nand (d_s0, n_s1, d_b) -> sel01;
+    Nand (n_s0, d_s1, d_c) -> sel10;
+    Nand (d_s0, d_s1, d_d) -> sel11;
+    Nand (sel00, sel01, sel10, sel11) -> y;
+}
+
+component Xor2(a, b) -> x {
+    ConstantBit() -> (0, 1, X);
+    Mux_4_1(a, b, 0, 1, 1, 0);
+}
+
+component Demux_1_4(s1, s0, i) -> (f0, f1, f2, f3) {
+    Buf(i)  -> d_i;
+    Buf(s1) -> d_s1; Buf(s0) -> d_s0;
+    Not(s1) -> n_s1; Not(s0) -> n_s0;
+    And3(n_s1, n_s0, d_i) -> f0;
+    And3(n_s1, d_s0, d_i) -> f1;
+    And3(d_s1, n_s0, d_i) -> f2;
+    And3(d_s1, d_s0, d_i) -> f3;
+}
+              </textarea>
             </div>
         </div>
         <div style="float:right; width:50%; height:90vh">
             DEBUG OUTPUT:
-            <textarea id="top_output_debug" class="code" style="height:100%;" placeholder="Simulation output" readonly></textarea>
+            <textarea id="top_output_debug" style="height:100%; width:95%" placeholder="Simulation output" readonly></textarea>
         </div>
         <script src="comphdl.js"></script>
         <script>
             function runGui() {
                 Rust.comphdl.then( function( comphdl ) {
+                    var alive = document.getElementById("check_alive");
                     // TODO: check if a thread is already running and kill it
+                    if(alive.checked) {
+                        // TODO: kill it
+                    }
+                    alive.checked = true;
                     comphdl.run_js_gui();
+                    showSimulationControls();
+                    resumeSimulation();
                 });
             }
             Rust.comphdl.then( function( comphdl ) {
                 document.getElementById("loading_wasm").style.display = "none";
                 document.getElementById("loaded_wasm").style.display = "block";
             });
+            function resumeSimulation() {
+                var a = document.getElementById("check_run_forever");
+                a.checked = true;
+            }
+            function pauseSimulation() {
+                var a = document.getElementById("check_run_forever");
+                a.checked = false;
+            }
+            function stopSimulation() {
+                var a = document.getElementById("check_alive");
+                a.checked = false;
+            }
+            function runStep() {
+                pauseSimulation();
+                var a = document.getElementById("check_run_step");
+                a.checked = true;
+            }
+            function hideSimulationControls() {
+                document.getElementById("simulation_controls").style.display = "none";
+            }
+            function showSimulationControls() {
+                document.getElementById("simulation_controls").style.display = "block";
+            }
         </script>
     </body>
 </html>

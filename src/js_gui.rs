@@ -33,6 +33,7 @@ fn get_element_by_id_value(id: &str) -> String {
 
 #[js_export]
 pub fn run_js_gui() {
+    // TODO: check if already running
     let definition = get_element_by_id_value("comphdl_definition");
     let top = get_element_by_id_value("top_name");
 
@@ -126,28 +127,52 @@ pub fn run_js_gui() {
 
     let counter: TextAreaElement = document().query_selector( "#top_output_debug" ).unwrap().unwrap().try_into().unwrap();
 
-    let main_loop = move || {
+    let main_loop = move |show_debug: bool| {
         let input = get_checkbox_inputs();
         let output = c.update(&input);
 
         set_checkbox_outputs(&output);
 
-        let message = format!("{:#?}", c);
-        counter.set_value(&message);
+        if show_debug {
+            let message = format!("{:#?}", c);
+            counter.set_value(&message);
+        }
     };
 
+    // This triggers the recursion limit
     js! {
         var main_loop = @{main_loop};
+        var check_run_forever = document.getElementById("check_run_forever");
+        var check_run_step = document.getElementById("check_run_step");
+        var check_alive = document.getElementById("check_alive");
+        var tick_display = document.getElementById("tick_display");
+        var check_show_debug = document.getElementById("check_show_debug");
+        var target_ticks_per_second = document.getElementById("target_ticks_per_second");
+        var tick = 0;
 
         function demo() {
-            main_loop();
-            // TODO: how do we stop?
-            //main_loop.drop(); // Necessary to clean up the closure on Rust's side.
+            if(check_run_forever.checked || check_run_step.checked) {
+                main_loop(check_show_debug.checked);
+                check_run_step.checked = false;
+                tick += 1;
+                tick_display.value = tick;
+            }
 
-            setTimeout(demo, 1000/30);
+            if(check_alive.checked == false) {
+                // Stop running
+                main_loop.drop(); // Necessary to clean up the closure on Rust's side.
+                clearInterval(demo);
+            } else {
+                /*
+                // Can we use setInterval if the function takes more than 1000/30 ms
+                // to run? Yes, js is singlethreaded.
+                var fps = parseInt(target_ticks_per_second.value, 10);
+                if(isNaN(fps)) { fps = 30; }
+                setTimeout(demo, 1000/fps);
+                */
+            }
         }
 
-        demo();
+        setInterval(demo, 1000/30);
     }
-
 }
