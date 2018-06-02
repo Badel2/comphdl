@@ -3,3 +3,6 @@
 **/*.rs.bk
 foo.vcd
 src/comphdl1.rs
+*~
+*.swp
+*.swo
