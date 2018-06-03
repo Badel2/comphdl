@@ -72,7 +72,7 @@
                 document.getElementById("loaded_wasm").style.display = "block";
                 
                 loadExample(false, "example1.txt");
-                var examples = ["example1.txt", "bufbufbuf.txt"];
+                var examples = ["example1.txt", "bufbufbuf.txt", "rslatch.txt"];
                 var examplesSelect = document.getElementById("exampleName");
                 examples.forEach(function(e, i) {
                     var option = document.createElement('option');
@@ -84,6 +84,7 @@
             });
             function loadExampleSelect() {
                 var name = document.getElementById("exampleName").value;
+                stopSimulation();
                 loadExample(true, name);
             }
             function loadExample(force, name) {
