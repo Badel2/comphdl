@@ -3,7 +3,7 @@ var superagent = require('superagent');
 var json5 = require('json5');
 var netlistSvg = require('./lib');
 
-var skins = ['lib/default.svg', 'lib/analog.svg'];
+var skins = ['skins/default.svg', 'skins/analog.svg'];
 
 var textarea = document.querySelector('#comphdl_json');
 var skinSelect = document.querySelector('#skinSelect');
