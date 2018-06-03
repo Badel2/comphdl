@@ -26,6 +26,9 @@ pub trait Component: std::fmt::Debug {
     fn port_names(&self) -> PortNames {
         PortNames::default(self.num_inputs(), self.num_outputs())
     }
+    fn internal_inputs(&self) -> Option<Vec<Vec<Bit>>> {
+        None
+    }
     fn clone_as_structural(&self) -> Option<Structural> {
         Some(Structural::new_wrap(self.box_clone()))
     }
@@ -392,6 +395,14 @@ impl Component for Structural {
     }
     fn port_names(&self) -> PortNames {
         PortNames::new_vec(self.info.inputs.clone(), self.info.outputs.clone())
+    }
+    fn internal_inputs(&self) -> Option<Vec<Vec<Bit>>> {
+        let mut v = vec![];
+        for c in self.components.iter() {
+            v.push(c.input.clone());
+        }
+
+        Some(v)
     }
     fn clone_as_structural(&self) -> Option<Structural> {
         Some(self.clone())

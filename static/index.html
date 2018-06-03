@@ -29,6 +29,7 @@
                order: 3;
             }
         </style>
+        <style id="wire_style"></style>
     </head>
     <body>
         <div id="loading_wasm" style="display: block; color: #F00;">
@@ -69,8 +70,8 @@
               <div id="top_input"></div>
               <div id="top_output"></div>
             </div>
-            <div style="height:500px;">
-              <textarea id="comphdl_definition" class="code" style="height:100%;">
+            <div>
+              <textarea id="comphdl_definition" class="code" style="height:500px;">
               </textarea>
             </div>
         </div>
@@ -146,6 +147,7 @@
                     alive.checked = true;
                     comphdl.run_js_gui();
                     showSimulationControls();
+                    document.getElementById("renderButton").click();
                     resumeSimulation();
                 });
             }

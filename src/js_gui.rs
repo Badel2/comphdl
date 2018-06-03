@@ -43,6 +43,10 @@ pub fn run_js_gui() {
     let mut c = cf.create_named(&top);
     let cs = c.clone_as_structural().unwrap();
     let s = emit_json::from_structural(&cs).unwrap();
+    let yosys_addr = emit_json::yosys_addr_map(&cs);
+
+    let comphdl_json: TextAreaElement = document().query_selector( "#comphdl_json" ).unwrap().unwrap().try_into().unwrap();
+    comphdl_json.set_value(&s);
 
     let num_inputs = c.num_inputs();
     let num_outputs = c.num_outputs();
@@ -125,6 +129,30 @@ pub fn run_js_gui() {
 
     };
 
+    let set_style_output_and_signals = move |signals: &[Vec<Bit>]| {
+        // The first element in signals must be c_zero's outputs!
+        let mut s = format!("");
+        for (c_id, c) in signals.iter().enumerate() {
+            for (port_id, x) in c.iter().enumerate() {
+                let i = if c_id == 0 {
+                    yosys_addr[&ComponentIndex::output(c_id, port_id)]
+                } else {
+                    yosys_addr[&ComponentIndex::input(c_id, port_id)]
+                };
+                let color = match *x {
+                    Bit::L => "#147014",
+                    Bit::H => "#70FF70",
+                    Bit::X => "#FF0A0A",
+                };
+                s.push_str(&format!(".wire_port{}_s0 {{ stroke: {}; stroke-width: 3; }}", i, color));
+            }
+        }
+        js! {
+            var stylesheet = document.getElementById("wire_style");
+            stylesheet.innerHTML = @{s};
+        }
+    };
+
     let counter: TextAreaElement = document().query_selector( "#top_output_debug" ).unwrap().unwrap().try_into().unwrap();
 
     let main_loop = move |show_debug: bool| {
@@ -132,6 +160,9 @@ pub fn run_js_gui() {
         let output = c.update(&input);
 
         set_checkbox_outputs(&output);
+
+        let internal = c.internal_inputs().unwrap();
+        set_style_output_and_signals(&internal);
 
         if show_debug {
             let message = format!("{:#?}", c);
