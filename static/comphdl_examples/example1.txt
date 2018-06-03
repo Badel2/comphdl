@@ -1,0 +1,41 @@
+component Buf (d) -> q { d=q; }
+component Not (a) -> q { Nand(a) -> q; }
+
+component Or2(a, b) -> x {
+    Not(a) -> n_a;
+    Not(b) -> n_b;
+    Nand(n_a, n_b) -> x;
+}
+
+component Mux_4_1(s1, s0, a, b, c, d) -> y {
+    Buf  (s1) -> d_s1;
+    Buf  (s0) -> d_s0;
+    Not  (s1) -> n_s1;
+    Not  (s0) -> n_s0;
+    Buf(a) -> d_a; Buf(b) -> d_b; Buf(c) -> d_c; Buf(d) -> d_d;
+    Nand (n_s0, n_s1, d_a) -> sel00;
+    Nand (d_s0, n_s1, d_b) -> sel01;
+    Nand (n_s0, d_s1, d_c) -> sel10;
+    Nand (d_s0, d_s1, d_d) -> sel11;
+    Nand (sel00, sel01, sel10, sel11) -> y;
+}
+
+component Xor2(a, b) -> x {
+    ConstantBit() -> (0, 1, X);
+    Mux_4_1(a, b, 0, 1, 1, 0);
+}
+
+component And3(a, b, c) -> x {
+    Nand(a, b, c) -> n_x;
+    Not(n_x) -> x;
+}
+
+component Demux_1_4(s1, s0, i) -> (f0, f1, f2, f3) {
+    Buf(i)  -> d_i;
+    Buf(s1) -> d_s1; Buf(s0) -> d_s0;
+    Not(s1) -> n_s1; Not(s0) -> n_s0;
+    And3(n_s1, n_s0, d_i) -> f0;
+    And3(n_s1, d_s0, d_i) -> f1;
+    And3(d_s1, n_s0, d_i) -> f2;
+    And3(d_s1, d_s0, d_i) -> f3;
+}
