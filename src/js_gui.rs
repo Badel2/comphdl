@@ -155,14 +155,16 @@ pub fn run_js_gui() {
 
     let counter: TextAreaElement = document().query_selector( "#top_output_debug" ).unwrap().unwrap().try_into().unwrap();
 
-    let main_loop = move |show_debug: bool| {
+    let main_loop = move |show_debug: bool, show_signals: bool| {
         let input = get_checkbox_inputs();
         let output = c.update(&input);
 
         set_checkbox_outputs(&output);
 
-        let internal = c.internal_inputs().unwrap();
-        set_style_output_and_signals(&internal);
+        if show_signals {
+            let internal = c.internal_inputs().unwrap();
+            set_style_output_and_signals(&internal);
+        }
 
         if show_debug {
             let message = format!("{:#?}", c);
@@ -178,12 +180,13 @@ pub fn run_js_gui() {
         var check_alive = document.getElementById("check_alive");
         var tick_display = document.getElementById("tick_display");
         var check_show_debug = document.getElementById("check_show_debug");
+        var check_show_signals = document.getElementById("check_show_signals");
         var target_ticks_per_second = document.getElementById("target_ticks_per_second");
         var tick = 0;
 
         function demo() {
             if(check_run_forever.checked || check_run_step.checked) {
-                main_loop(check_show_debug.checked);
+                main_loop(check_show_debug.checked, check_show_signals.checked);
                 check_run_step.checked = false;
                 tick += 1;
                 tick_display.value = tick;
