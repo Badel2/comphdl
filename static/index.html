@@ -16,6 +16,18 @@
             .code {
                 width: 95%;
             }
+            #container {
+              display: flex;
+              flex-direction: row;
+              flex-wrap: wrap;
+            }
+            .div-1, .div-3 {
+              flex: 1 1 0;
+            }
+            .div-2 {
+               flex: 100%;
+               order: 3;
+            }
         </style>
     </head>
     <body>
@@ -26,7 +38,8 @@
         <div id="loaded_wasm" style="display: none; color: #0F0;">
             WASM MODULE SUCCESSFULLY LOADED
         </div>
-        <div style="float:left; width:50%; height:90vh">
+        <div id="container">
+        <div class="div-1">
             <div>
               <label for=exampleName>Load example:</label>
               <select id=exampleName></select>
@@ -56,16 +69,35 @@
               <div id="top_input"></div>
               <div id="top_output"></div>
             </div>
-            <div style="height:100%">
+            <div style="height:500px;">
               <textarea id="comphdl_definition" class="code" style="height:100%;">
               </textarea>
             </div>
         </div>
-        <div style="float:right; width:50%; height:90vh">
+        <div class="div-3">
             DEBUG OUTPUT:
-            <textarea id="top_output_debug" style="height:100%; width:95%" placeholder="Simulation output" readonly></textarea>
+            <textarea id="top_output_debug" style="height:400px; width:95%" placeholder="Simulation output" readonly></textarea>
+            NETLIST JSON:
+            <textarea id="comphdl_json" style="height:100px; width:95%" placeholder="Netlist json"></textarea>
+            <div>
+                <div style=display:flex;justify-content:space-between>
+                    <button id=formatButton>Format JSON</button>
+                    <div>
+                        <label for=skinSelect>Select skin:</label>
+                        <select id=skinSelect></select>
+                        <button id=renderButton>Render</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="viewerContainer" class="div-2">
+            <svg id="svgArea">
+            </svg>
+        </div>
         </div>
         <script src="comphdl.js"></script>
+        <script src="elk.bundled.js"></script>
+        <script src="netlistsvg.js"></script>
         <script>
             Rust.comphdl.then( function( comphdl ) {
                 document.getElementById("loading_wasm").style.display = "none";
