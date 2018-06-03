@@ -83,6 +83,17 @@ function showSimulationControls() {
     document.getElementById("simulation_controls").style.display = "block";
 }
 
+function toggleFloatingControls() {
+    var a = document.getElementById("draggableControls");
+    if (a.style.position == 'absolute') {
+        a.style.position = 'static';
+        a.style.width = '';
+    } else {
+        a.style.position = 'absolute';
+        a.style.width = '500px';
+    }
+}
+
 function dragElement(elmnt) {
     var pos1 = 0,
         pos2 = 0,
