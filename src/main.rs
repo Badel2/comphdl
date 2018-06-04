@@ -1,6 +1,7 @@
 #![cfg_attr(feature = "stdweb", feature(proc_macro))]
 #![recursion_limit = "256"]
 
+#[cfg(feature = "stdweb")]
 #[macro_use]
 extern crate stdweb;
 

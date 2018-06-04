@@ -22,7 +22,7 @@ component Mux_4_1(s1, s0, a, b, c, d) -> y {
 
 component Xor2(a, b) -> x {
     ConstantBit() -> (0, 1, X);
-    Mux_4_1(a, b, 0, 1, 1, 0);
+    Mux_4_1(a, b, 0, 1, 1, 0) -> x;
 }
 
 component And3(a, b, c) -> x {

@@ -414,7 +414,7 @@ impl CompIo {
     pub fn new(comp: Box<Component>) -> CompIo {
         let input = vec![Bit::X; comp.num_inputs()];
         let output = vec![Bit::X; comp.num_outputs()];
-        let connections = vec![vec![]; comp.num_inputs()];
+        let connections = vec![vec![]; comp.num_outputs()];
         CompIo {
             comp,
             input,
