@@ -24,6 +24,7 @@ function register_main_loop(main_loop) {
         var check_show_signals = document.getElementById("check_show_signals");
         var target_ticks_per_second = document.getElementById("target_ticks_per_second");
         var tick = 0;
+        var intervalId;
 
         function demo() {
             if(check_run_forever.checked || check_run_step.checked) {
@@ -36,7 +37,7 @@ function register_main_loop(main_loop) {
             if(check_alive.checked == false) {
                 // Stop running
                 main_loop.drop(); // Necessary to clean up the closure on Rust's side.
-                clearInterval(demo);
+                clearInterval(intervalId);
             } else {
                 /*
                 // Can we use setInterval if the function takes more than 1000/30 ms
@@ -48,7 +49,7 @@ function register_main_loop(main_loop) {
             }
         }
 
-        setInterval(demo, 1000/30);
+        intervalId = setInterval(demo, 1000/30);
 }
 
 function loadExampleSelect() {
