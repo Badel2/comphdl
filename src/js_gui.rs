@@ -178,41 +178,8 @@ pub fn run_js_gui() {
         }
     };
 
-    // This triggers the recursion limit
     js! {
         var main_loop = @{main_loop};
-        var check_run_forever = document.getElementById("check_run_forever");
-        var check_run_step = document.getElementById("check_run_step");
-        var check_alive = document.getElementById("check_alive");
-        var tick_display = document.getElementById("tick_display");
-        var check_show_debug = document.getElementById("check_show_debug");
-        var check_show_signals = document.getElementById("check_show_signals");
-        var target_ticks_per_second = document.getElementById("target_ticks_per_second");
-        var tick = 0;
-
-        function demo() {
-            if(check_run_forever.checked || check_run_step.checked) {
-                main_loop(check_show_debug.checked, check_show_signals.checked);
-                check_run_step.checked = false;
-                tick += 1;
-                tick_display.value = tick;
-            }
-
-            if(check_alive.checked == false) {
-                // Stop running
-                main_loop.drop(); // Necessary to clean up the closure on Rust's side.
-                clearInterval(demo);
-            } else {
-                /*
-                // Can we use setInterval if the function takes more than 1000/30 ms
-                // to run? Yes, js is singlethreaded.
-                var fps = parseInt(target_ticks_per_second.value, 10);
-                if(isNaN(fps)) { fps = 30; }
-                setTimeout(demo, 1000/fps);
-                */
-            }
-        }
-
-        setInterval(demo, 1000/30);
+        register_main_loop(main_loop);
     }
 }
