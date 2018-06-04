@@ -29,6 +29,9 @@ pub trait Component: std::fmt::Debug {
     fn internal_inputs(&self) -> Option<Vec<Vec<Bit>>> {
         None
     }
+    fn as_structural(&self) -> Option<&Structural> {
+        None
+    }
     fn clone_as_structural(&self) -> Option<Structural> {
         Some(Structural::new_wrap(self.box_clone()))
     }
@@ -403,6 +406,9 @@ impl Component for Structural {
         }
 
         Some(v)
+    }
+    fn as_structural(&self) -> Option<&Structural> {
+        Some(self)
     }
     fn clone_as_structural(&self) -> Option<Structural> {
         Some(self.clone())

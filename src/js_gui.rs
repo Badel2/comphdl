@@ -41,9 +41,15 @@ pub fn run_js_gui() {
     console!(log, format!("{:?}\n{:?}", definition, top));
     let mut cf = parser::parse_str(&definition);
     let mut c = cf.create_named(&top);
-    let cs = c.clone_as_structural().unwrap();
-    let s = emit_json::from_structural(&cs).unwrap();
-    let yosys_addr = emit_json::yosys_addr_map(&cs);
+
+    // Borrow the component as a structural to generate the netlist
+    let (s, yosys_addr) = {
+        let cs = c.as_structural().unwrap();
+        let s = emit_json::from_structural(&cs).unwrap();
+        let yosys_addr = emit_json::yosys_addr_map(&cs);
+
+        (s, yosys_addr)
+    };
 
     let comphdl_json: TextAreaElement = document().query_selector( "#comphdl_json" ).unwrap().unwrap().try_into().unwrap();
     comphdl_json.set_value(&s);
