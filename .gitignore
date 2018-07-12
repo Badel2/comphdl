@@ -6,3 +6,7 @@ src/comphdl1.rs
 *~
 *.swp
 *.swo
+static/elk.bundled.js
+static/lib
+static/netlistsvg.js
+static/skins
