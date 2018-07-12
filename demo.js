@@ -23,7 +23,7 @@ skins.forEach(function(skinPath, i) {
 
 function render() {
     var netlist = json5.parse(textarea.value);
-    netlistSvg.render(skinSelect.value, netlist, function(e, svg) {
+    return netlistSvg.render(skinSelect.value, netlist).then(function(svg) {
         viewer.innerHTML = svg;
     });
 }

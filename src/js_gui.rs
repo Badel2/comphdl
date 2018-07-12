@@ -64,8 +64,8 @@ pub fn run_js_gui() {
     for i in 0..num_inputs {
         let name = &pn.input[i];
         let inner_html = format!(
-            r#"<input type="checkbox" id="checkbox_input_i{}">{}  "#,
-            i, name
+            r#"<input type="checkbox" id="checkbox_input_{}">{}  "#,
+            name, name
         );
         input_div_inner_html.push_str(&inner_html);
     }
@@ -90,12 +90,15 @@ pub fn run_js_gui() {
     }
 
     console!(log, "Ok5");
+
+    let inputnames = pn.input.clone();
+    let outputnames = pn.output.clone();
     let get_checkbox_inputs = move || {
         let mut v = vec![];
         for i in 0..num_inputs {
-            let i_js = i as i32;
+            let name = &inputnames[i];
             let checked_raw = js! {
-                var che = document.getElementById("checkbox_input_i" + @{i_js});
+                var che = document.getElementById("checkbox_input_" + @{name});
                 if(che == null) return null;
                 return che.checked;
             };
@@ -115,8 +118,14 @@ pub fn run_js_gui() {
         v
     };
 
-    let set_checkbox_outputs = move |outputs: &[Bit]| {
+    let set_checkbox_outputs = move |outputs: &[Bit], old_outputs: &Option<Vec<Bit>>| {
         for i in 0..num_outputs {
+            // Skip update if output has not changed
+            if let Some(old) = old_outputs {
+                if old[i] == outputs[i] {
+                    continue;
+                }
+            }
             let i_js = i as i32;
             // praise type inference
             let bit = match outputs[i] {
@@ -131,8 +140,22 @@ pub fn run_js_gui() {
                     che.checked = @{bit};
                 }
             }
-        }
 
+            let color = match outputs[i] {
+                Bit::L => "#147014",
+                Bit::H => "#70FF70",
+                Bit::X => "#FF0A0A",
+            };
+
+            let name = &outputnames[i];
+
+            js! {
+                var a = document.getElementById("outputExt_" + @{name});
+                if(a) {
+                    a.style = "fill: " + @{color};
+                }
+            }
+        }
     };
 
     let set_style_output_and_signals = move |signals: &[Vec<Bit>]| {
@@ -161,21 +184,30 @@ pub fn run_js_gui() {
 
     let counter: TextAreaElement = document().query_selector( "#top_output_debug" ).unwrap().unwrap().try_into().unwrap();
 
+    let mut old_output = None;
+    let mut old_internal = None;
     let main_loop = move |show_debug: bool, show_signals: bool| {
         let input = get_checkbox_inputs();
         let output = c.update(&input);
 
-        set_checkbox_outputs(&output);
+        set_checkbox_outputs(&output, &old_output);
 
         if show_signals {
             let internal = c.internal_inputs().unwrap();
-            set_style_output_and_signals(&internal);
+            // Skip update if the internal signals have not changed
+            //if old_internal.is_none() || old_internal.as_ref().unwrap() != &internal {
+            if old_internal.as_ref().map_or(true, |o| o != &internal) {
+                set_style_output_and_signals(&internal);
+            }
+            old_internal = Some(internal);
         }
 
         if show_debug {
             let message = format!("{:#?}", c);
             counter.set_value(&message);
         }
+
+        old_output = Some(output);
     };
 
     js! {

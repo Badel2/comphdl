@@ -38,6 +38,15 @@
                 cursor: move;
                 padding: 10px;
             }
+            .noselect {
+              -webkit-touch-callout: none; /* iOS Safari */
+                -webkit-user-select: none; /* Safari */
+                 -khtml-user-select: none; /* Konqueror HTML */
+                   -moz-user-select: none; /* Firefox */
+                    -ms-user-select: none; /* Internet Explorer/Edge */
+                        user-select: none; /* Non-prefixed version, currently
+                                              supported by Chrome and Opera */
+            }
         </style>
         <style id="wire_style"></style>
     </head>
@@ -103,7 +112,7 @@
                 </div>
             </div>
         </div>
-        <div id="viewerContainer" class="div-2">
+        <div id="viewerContainer" class="div-2 noselect">
             <svg id="svgArea">
             </svg>
         </div>

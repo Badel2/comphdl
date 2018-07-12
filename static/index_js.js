@@ -86,8 +86,37 @@ function runGui() {
         alive.checked = true;
         comphdl.run_js_gui();
         showSimulationControls();
-        document.getElementById("renderButton").click();
-        resumeSimulation();
+        document.getElementById("renderButton").onclick().then(function(svg) {
+            // Enable clicking to svg ports toggles inputs
+            var ti = document.getElementById("top_input");
+            for(var i=0; i<ti.children.length; i++) {
+                var tic = ti.children[i];
+                var inputid = tic.id.replace("checkbox_input_", "inputExt_");
+                tic.onclick = function(){
+                    var inputid = this.id.replace("checkbox_input_", "inputExt_");
+                    var ig = document.getElementById(inputid);
+                    if(ig) {
+                        if(this.checked) {
+                            ig.style = "fill: #70FF70;";
+                        } else {
+                            ig.style = "fill: #147014;";
+                        }
+                    }
+                };
+                var ig = document.getElementById(inputid);
+                if(ig) {
+                    ig.style = "fill: #147014;";
+                    ig.onclick = function(){
+                        var checkboxid = this.id.replace("inputExt_", "checkbox_input_");
+                        document.getElementById(checkboxid).click();
+                    };
+                } else {
+                    console.error(tic.id + " is missing the corresponding " + inputid + " in the svg")
+                }
+            }
+
+            resumeSimulation();
+        });
     });
 }
 
