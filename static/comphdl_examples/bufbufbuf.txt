@@ -23,8 +23,7 @@ component Buf10(a) -> x {
     Buf(a) -> a1;
     Buf4(a1) -> a2;
     Buf4(a2) -> a3;
-    Buf(a3) -> a4;
-    Buf(a4) -> x;
+    Buf(a3) -> x;
 }
 
 component Buf60(a) -> x {
@@ -33,7 +32,6 @@ component Buf60(a) -> x {
     Buf10(a2) -> a3;
     Buf10(a3) -> a4;
     Buf10(a4) -> a5;
-    Buf4(a5) -> a6;
-    Buf(a6) -> x;
+    Buf10(a5) -> x;
 }
 
