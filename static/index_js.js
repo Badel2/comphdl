@@ -84,7 +84,9 @@ function runGui() {
             // TODO: kill it
         }
         alive.checked = true;
-        comphdl.run_js_gui();
+        var error_string = comphdl.run_js_gui();
+        console.log(error_string);
+        document.getElementById("top_output_debug").value = error_string;
         showSimulationControls();
         document.getElementById("renderButton").onclick().then(function(svg) {
             // Enable clicking to svg ports toggles inputs

@@ -254,10 +254,14 @@ impl ComponentFactory {
 
         Self { components, comp_id, comp_def }
     }
-    pub fn create_named(&self, name: &str) -> Box<Component> {
+    pub fn create_named(&self, name: &str) -> Option<Box<Component>> {
         println!("Creating component {}", name);
-        let c_id = self.comp_id.get(name).expect("This component does not exist");
-        self.create(*c_id)
+        if let Some(c_id) = self.comp_id.get(name) {
+            Some(self.create(*c_id))
+        } else {
+            // This component does not exist
+            None
+        }
     }
     fn create(&self, c_id: CompId) -> Box<Component> {
         let ref inputs = self.components[&c_id].inputs;
@@ -329,11 +333,10 @@ fn insert_special_components(components: &mut HashMap<CompId, CompInfo>,
     //i += 1;
 }
 
-pub fn parse_str(bs: &str) -> ComponentFactory {
-    let c = comphdl1::FileParser::new().parse(&bs).unwrap();
-    let s = ComponentFactory::new(c);
+pub fn parse_str(bs: &str) -> Result<ComponentFactory, String> {
+    let c = comphdl1::FileParser::new().parse(&bs);
 
-    s
+    c.map(|c| ComponentFactory::new(c)).map_err(|e| format!("{}", e))
 }
 
 pub fn parse_file(filename: &str, top: &str) -> Box<Component> {
@@ -353,7 +356,7 @@ pub fn parse_file(filename: &str, top: &str) -> Box<Component> {
     */
     let c = comphdl1::FileParser::new().parse(&bs).unwrap();
     let s = ComponentFactory::new(c);
-    let mux = s.create_named(top);
+    let mux = s.create_named(top).unwrap();
     println!("{:#?}", mux);
 
     mux

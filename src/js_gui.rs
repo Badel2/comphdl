@@ -32,15 +32,28 @@ fn get_element_by_id_value(id: &str) -> String {
 }
 
 #[js_export]
-pub fn run_js_gui() {
+pub fn run_js_gui() -> String {
     // TODO: check if already running
     let definition = get_element_by_id_value("comphdl_definition");
     let top = get_element_by_id_value("top_name");
 
-    console!(log, "Ok1");
-    console!(log, format!("{:?}\n{:?}", definition, top));
-    let mut cf = parser::parse_str(&definition);
-    let mut c = cf.create_named(&top);
+    let mut cf = match parser::parse_str(&definition) {
+        Ok(cf) => cf,
+        Err(e) => {
+            return format!("Error parsing source code: {}", e);
+        }
+    };
+
+    let mut c = match cf.create_named(&top) {
+        Some(c) => c,
+        None => {
+            if top == "" {
+                return format!("You must specify a top component name");
+            }
+            return format!("Top component `{}` not found", top);
+            // TODO: did you mean ...? (find components with similar names)
+        }
+    };
 
     // Borrow the component as a structural to generate the netlist
     let (s, yosys_addr) = {
@@ -50,6 +63,7 @@ pub fn run_js_gui() {
 
         (s, yosys_addr)
     };
+    console!(log, "Ok1");
 
     let comphdl_json: TextAreaElement = document().query_selector( "#comphdl_json" ).unwrap().unwrap().try_into().unwrap();
     comphdl_json.set_value(&s);
@@ -214,4 +228,6 @@ pub fn run_js_gui() {
         var main_loop = @{main_loop};
         register_main_loop(main_loop);
     }
+
+    return "Everything ok".into();
 }
