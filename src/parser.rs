@@ -216,6 +216,18 @@ impl CompDefinition {
             }
         }
 
+        for group in assignments.v.iter() {
+            for name in group.iter() {
+                let parts: Vec<_> = name.split("$").collect();
+                if parts.len() == 1 {
+                    if let Some(_) = array_names.get(parts[0]) {
+                        return Err(format!("Signal `{}` is used as an array, but also as a bit", name));
+                
+                    }
+                }
+            }
+        }
+
         println!("ARRAY NAMES: {:?}", array_names);
 
         for (name, dimension) in array_names {
