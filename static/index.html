@@ -92,8 +92,8 @@
                 </div>
             </div>
             <div>
-              <textarea id="comphdl_definition" class="code" style="height:500px;">
-              </textarea>
+              <div id="comphdl_definition" style="height:500px; margin-right: 8px;">
+              </div>
             </div>
         </div>
         <div class="div-3">
@@ -117,6 +117,12 @@
             </svg>
         </div>
         </div>
+        <script src="/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+        <script>
+            var editor = ace.edit("comphdl_definition");
+            editor.setTheme("ace/theme/tomorrow");
+            editor.session.setMode("ace/mode/rust");
+        </script>
         <script src="comphdl.js"></script>
         <script src="elk.bundled.js"></script>
         <script src="netlistsvg.js"></script>

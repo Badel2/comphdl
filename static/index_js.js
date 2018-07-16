@@ -59,9 +59,9 @@ function loadExampleSelect() {
 }
 
 function loadExample(force, name) {
-    var a = document.getElementById("comphdl_definition");
+    var editorValue = editor.getValue();
     // Do not overwrite existing code
-    if (force == false && a.value != "") {
+    if (force == false && editorValue != "") {
         return;
     }
     fetch("./comphdl_examples/" + name).then(function(response) {
@@ -71,7 +71,7 @@ function loadExample(force, name) {
         return response;
     }).then(function(response) {
         response.text().then(function(text) {
-            a.value = text;
+            editor.setValue(text);
         });
     });
 }

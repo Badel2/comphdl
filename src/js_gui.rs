@@ -34,7 +34,16 @@ fn get_element_by_id_value(id: &str) -> String {
 #[js_export]
 pub fn run_js_gui() -> String {
     // TODO: check if already running
-    let definition = get_element_by_id_value("comphdl_definition");
+    let definition_raw = js! {
+        return editor.getValue();
+    };
+    if definition_raw.is_null() {
+        return format!("Error reading source code from ACE editor");
+    }
+    let definition = match definition_raw.into_string() {
+        Some(s) => s,
+        None => return format!("Got invalid string from ACE editor"),
+    };
     let top = get_element_by_id_value("top_name");
 
     let mut cf = match parser::parse_str(&definition) {
