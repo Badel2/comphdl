@@ -2,6 +2,7 @@ use component::{ComponentIndex, Index, Component, CompIo, Structural, Nand, Cons
 use comphdl1;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 #[derive(Debug, Clone)]
 pub struct CompInfo {
@@ -158,7 +159,10 @@ impl CompDefinition {
                 continue;
             }
             println!("Inserting {:#?}", c);
-            let c_id = comp_id[&c.name];
+            let c_id = match comp_id.get(&c.name) {
+                Some(a) => *a,
+                None => return Err(format!("Component {} not found", c.name)),
+            };
 
             // Verify than number of inputs and outputs match
             // TODO: create is_builtin function
@@ -286,6 +290,7 @@ pub struct ComponentFactory {
     comp_id: HashMap<String, CompId>,
     components: HashMap<CompId, Rc<CompInfo>>,
     comp_def: HashMap<CompId, Rc<CompDefinition>>,
+    cache: RefCell<HashMap<CompId, Box<Component>>>,
 }
 
 impl ComponentFactory {
@@ -318,7 +323,7 @@ impl ComponentFactory {
         let components = components.into_iter().map(|(k, v)| (k, Rc::new(v))).collect();
         let comp_def = comp_def.into_iter().map(|(k, v)| (k, Rc::new(v))).collect();
 
-        Ok(Self { components, comp_id, comp_def })
+        Ok(Self { components, comp_id, comp_def, cache: RefCell::new(HashMap::new()) })
     }
     pub fn create_named(&self, name: &str) -> Option<Box<Component>> {
         println!("Creating component {}", name);
@@ -333,6 +338,11 @@ impl ComponentFactory {
         let ref inputs = self.components[&c_id].inputs;
         let ref outputs = self.components[&c_id].outputs;
         let ref name = self.components[&c_id].name;
+
+        if let Some(c) = self.cache.borrow().get(&c_id) {
+            println!("Got cached component id {}: {}", c_id.0, name);
+            return c.clone();
+        }
 
         println!("Creating component with id {}: {}", c_id.0, name);
         let ref def = self.comp_def[&c_id];
@@ -368,7 +378,11 @@ impl ComponentFactory {
 
         let gate = Structural::new(c, Rc::clone(&self.components[&c_id]));
 
-        Box::new(gate)
+        let c = Box::new(gate);
+
+        self.cache.borrow_mut().insert(c_id, c.clone());
+
+        c
     }
     fn create_builtin(&self, c_id: CompId, num_inputs: usize, num_outputs: usize) -> Option<Box<Component>> {
         let ref name = self.components[&c_id].name;
