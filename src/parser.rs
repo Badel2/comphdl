@@ -3,19 +3,37 @@ use comphdl1;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+// [7:0] is not the same as [0:7]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct BidirectionalRange(pub u64, pub u64);
+
+impl BidirectionalRange {
+    fn one_bit() -> Self {
+        Self { 0: 0, 1: 0 }
+    }
+
+    fn count(&self) -> u64 {
+        if self.0 <= self.1 {
+            self.1 - self.0 + 1
+        } else {
+            self.0 - self.1 + 1
+        }
+    }
+}
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct BitArrayDef {
     pub name: String,
-    pub dimensions: Vec<u64>,
+    pub dimensions: Vec<BidirectionalRange>,
 }
 
 impl BitArrayDef {
-    pub fn new(name: String, dimensions: Vec<u64>) -> Self {
+    pub fn new(name: String, dimensions: Vec<BidirectionalRange>) -> Self {
         Self { name, dimensions }
     }
     pub fn from_bit(name: String) -> Self {
         // A bit is a 1-element 1D array
-        Self { name, dimensions: vec![1] }
+        Self { name, dimensions: vec![BidirectionalRange::one_bit()] }
     }
 }
 
@@ -452,4 +470,24 @@ component Or2(a, b, c) -> x {
     let cf = ComponentFactory::new(pd);
     println!("{:#?}", cf);
     assert!(cf.is_err());
+}
+
+#[test]
+fn array_1d() {
+    let d = r#"
+component ArrayTest1D(a[3:0]) -> b[3:0] {
+    a[3:0] = b[3:0];
+}
+    "#;
+
+    let pd = comphdl1::FileParser::new().parse(d).unwrap();
+    let cf = ComponentFactory::new(pd);
+    println!("{:#?}", cf);
+    let cf = cf.unwrap();
+
+    let s = cf.create_named("ArrayTest1D");
+    println!("{:#?}", s);
+    let s = s.unwrap();
+    assert_eq!(s.num_inputs(), 4);
+    assert_eq!(s.num_outputs(), 4);
 }

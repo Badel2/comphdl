@@ -1,4 +1,4 @@
-use parser::{CompInfo, BitArrayDef};
+use parser::{CompInfo, BitArrayDef, BidirectionalRange};
 
 grammar;
 
@@ -52,7 +52,7 @@ pub Comment = {
 
 // [a-zA-Z0-9_]
 pub Word: String = {
-    r"(\w+)" => format!("{}", <>)
+    r"([_\pL][_0-9\pL]*)" => format!("{}", <>),
 };
 
 pub Name = Word;
@@ -71,10 +71,19 @@ pub Outputs: Vec<BitArrayDef> = {
 };
 
 pub BitArray: BitArrayDef = {
-    Word => BitArrayDef::from_bit(<>)
+    Word => BitArrayDef::from_bit(<>),
+    <w: Word> <r: Range> => BitArrayDef::new(w, vec![r]),
 };
 
 pub BitArrayArgs = Comma<BitArray>;
+
+pub Range: BidirectionalRange = {
+    "[" <a: Number> ":" <b: Number> "]" => BidirectionalRange(a, b)
+};
+
+pub Number: u64 = {
+    r"[0-9]+" => <>.parse().unwrap()
+};
 
 pub VarArgs = Comma<Word>;
 

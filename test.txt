@@ -27,8 +27,8 @@ component Mux_4_1(s1, s0, a, b, c, d) -> y {
 }
 
 component Xor2(a, b) -> x {
-    ConstantBit() -> (0, 1, X);
-    Mux_4_1(a, b, 0, 1, 1, 0) -> x;
+    ConstantBit() -> (_0, _1, X);
+    Mux_4_1(a, b, _0, _1, _1, _0) -> x;
 }
 
 component Demux_1_4(s1, s0, i) -> (f0, f1, f2, f3) {
@@ -57,4 +57,8 @@ component DLatch(enable, d) -> q {
     Nand(n_enable, n_d) -> ned;
     Nand(n_enable, n_q) -> q;
     Not(q) -> n_q;
+}
+
+component ArrayTest1D(a[3:0]) -> b[3:0] {
+    a[3:0] = b[3:0];
 }
