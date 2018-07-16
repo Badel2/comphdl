@@ -118,11 +118,11 @@ pub struct CompDefinition {
 }
 
 impl CompDefinition {
-    fn new(_components: &HashMap<CompId, CompInfo>,
+    fn new(components: &HashMap<CompId, CompInfo>,
            comp_id: &HashMap<String, CompId>,
            c_zero: &CompInfo,
            other: &[CompInfo]
-    ) -> Self {
+    ) -> Result<Self, String> {
         let mut comp = vec![];
         let mut assignments = Assignments::new();
         let mut signals = HashMap::new();
@@ -149,7 +149,10 @@ impl CompDefinition {
 
         for c in other {
             // Prevent recursive definitions
-            assert!(name != &c.name, format!("Recursive definition of component {}", name));
+            if c_zero.name == c.name {
+                return Err(format!("Recursive definition of component {}", name));
+            }
+            
 
             // Process assignments
             if c.name == "actually, I'm just an assignment" {
@@ -158,6 +161,30 @@ impl CompDefinition {
             }
             println!("Inserting {:#?}", c);
             let c_id = comp_id[&c.name];
+
+            // Verify than number of inputs and outputs match
+            // TODO: create is_builtin function
+            if ["Nand", "ConstantBit"].contains(&c.name.as_str()) {
+                // Builtin gates can have a generic number of inputs or outputs,
+                // we dont check them here, but they are checked when creating
+                // these components (create_builtin)
+            } else {
+                if components[&c_id].inputs.len() != c.inputs.len() {
+                    return Err(format!("Wrong number of inputs in {} definition: component \
+                        {} has {} inputs but {} were supplied",
+                        c_zero.name, c.name,
+                        components[&c_id].inputs.len(), c.inputs.len())
+                    );
+                }
+                if components[&c_id].outputs.len() != c.outputs.len() {
+                    return Err(format!("Wrong number of outputs in {} definition: component \
+                        {} has {} outputs but {} were supplied",
+                        c_zero.name, c.name,
+                        components[&c_id].outputs.len(), c.outputs.len())
+                    );
+                }
+            }
+
             comp.push(c_id);
             let l_id = comp.len() - 1;
             generics.insert(l_id, (c.inputs.len(), c.outputs.len()));
@@ -197,8 +224,8 @@ impl CompDefinition {
                 }
             }
             if from.len() > 1 {
-                panic!("Signal {} is connected to more than one output: {:#?}",
-                       s, con);
+                return Err(format!("Signal {} is connected to more than one output: {:#?}",
+                       s, con));
             }
             // Remove duplicate connections (can be created using assignments)
             let to = to_set.drain().map(|(k, _v)| k).collect();
@@ -211,7 +238,7 @@ impl CompDefinition {
 
         println!("Signals: {:#?}", signals);
 
-        Self { comp, connections, generics }
+        Ok(Self { comp, connections, generics })
     }
 }
 
@@ -223,7 +250,7 @@ pub struct ComponentFactory {
 }
 
 impl ComponentFactory {
-    fn new(all: Vec<(CompInfo, Vec<CompInfo>)>) -> Self {
+    fn new(all: Vec<(CompInfo, Vec<CompInfo>)>) -> Result<Self, String> {
         let mut components = HashMap::new();
         let mut comp_id = HashMap::new();
         let mut comp_def = HashMap::new();
@@ -235,7 +262,7 @@ impl ComponentFactory {
             let mut c_zero = c_zero.clone();
             c_zero.verify();
             if let Some(_) = comp_id.get(&c_zero.name) {
-                panic!("Component name already exists");
+                return Err(format!("Redefinition of component {}", c_zero.name));
             }
             comp_id.insert(c_zero.name.clone(), CompId(i));
             components.insert(CompId(i), c_zero);
@@ -244,7 +271,7 @@ impl ComponentFactory {
         }
 
         for (c_zero, other) in all {
-            let def = CompDefinition::new(&components, &comp_id, &c_zero, &other);
+            let def = CompDefinition::new(&components, &comp_id, &c_zero, &other)?;
             let g_id = comp_id[&c_zero.name];
             comp_def.insert(g_id, def);
         }
@@ -252,7 +279,7 @@ impl ComponentFactory {
         let components = components.into_iter().map(|(k, v)| (k, Rc::new(v))).collect();
         let comp_def = comp_def.into_iter().map(|(k, v)| (k, Rc::new(v))).collect();
 
-        Self { components, comp_id, comp_def }
+        Ok(Self { components, comp_id, comp_def })
     }
     pub fn create_named(&self, name: &str) -> Option<Box<Component>> {
         println!("Creating component {}", name);
@@ -336,7 +363,7 @@ fn insert_special_components(components: &mut HashMap<CompId, CompInfo>,
 pub fn parse_str(bs: &str) -> Result<ComponentFactory, String> {
     let c = comphdl1::FileParser::new().parse(&bs);
 
-    c.map(|c| ComponentFactory::new(c)).map_err(|e| format!("{}", e))
+    c.map_err(|e| format!("{}", e)).and_then(|c| ComponentFactory::new(c))
 }
 
 pub fn parse_file(filename: &str, top: &str) -> Box<Component> {
@@ -355,7 +382,7 @@ pub fn parse_file(filename: &str, top: &str) -> Box<Component> {
     panic!("Thank you for playing!");
     */
     let c = comphdl1::FileParser::new().parse(&bs).unwrap();
-    let s = ComponentFactory::new(c);
+    let s = ComponentFactory::new(c).unwrap();
     let mux = s.create_named(top).unwrap();
     println!("{:#?}", mux);
 
@@ -374,4 +401,64 @@ fn compdef_test() {
     for x in d {
         println!("{:#?}", comphdl1::CompDefParser::new().parse(x).unwrap());
     }
+}
+
+#[test]
+fn wrong_number_of_inputs() {
+    let d = r#"
+component Or2(a, b) -> x {
+    Nand(a) -> n_a;
+    Nand(b) -> n_b;
+    Nand(n_a, n_b) -> x; 
+}
+
+component Or3a(a, b, c) -> x {
+    Or2(a, b, c) -> x;
+}
+component Or3b(a, b, c) -> x {
+    Or2(a) -> x;
+}
+    "#;
+
+    let pd = comphdl1::FileParser::new().parse(d).unwrap();
+    let cf = ComponentFactory::new(pd);
+    println!("{:#?}", cf);
+    assert!(cf.is_err());
+
+    let d = r#"
+component Or2(a, b) -> x {
+    Nand(a) -> n_a;
+    Nand(b) -> n_b;
+    Nand(n_a, n_b) -> x; 
+}
+
+component Or3(a, b, c) -> x {
+    Or2(a, b) -> ab;
+    Or2(ab, c) -> x;
+}
+    "#;
+    let pd = comphdl1::FileParser::new().parse(d).unwrap();
+    let cf = ComponentFactory::new(pd);
+    println!("{:#?}", cf);
+    assert!(cf.is_ok());
+}
+
+#[test]
+fn redefinition() {
+    let d = r#"
+component Or2(a, b) -> x {
+    Nand(a) -> n_a;
+    Nand(b) -> n_b;
+    Nand(n_a, n_b) -> x; 
+}
+
+component Or2(a, b, c) -> x {
+    Nand(a, b) -> x;
+}
+    "#;
+
+    let pd = comphdl1::FileParser::new().parse(d).unwrap();
+    let cf = ComponentFactory::new(pd);
+    println!("{:#?}", cf);
+    assert!(cf.is_err());
 }
