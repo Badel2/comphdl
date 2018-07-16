@@ -2,7 +2,7 @@
 
 Very early demo available at:
 
-https://badel2.github.io/comphdl/demos/v07/
+https://badel2.github.io/comphdl/demo/v07/
 
 This is a work in progress, you can follow it on:
 
