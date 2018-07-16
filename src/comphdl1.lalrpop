@@ -1,4 +1,4 @@
-use parser::{CompInfo, BitArrayDef, BidirectionalRange};
+use parser::CompInfo;
 
 grammar;
 
@@ -57,28 +57,42 @@ pub Word: String = {
 
 pub Name = Word;
 
-pub Inputs: Vec<BitArrayDef> = {
+pub Inputs: Vec<String> = {
     // (a, b)
-    "(" <BitArrayArgs> ")",
+    "(" <BitArrayArgs> ")" => <>.into_iter().flat_map(|x| x).collect()
 };
 
 // pub Outputs = Inputs;
-pub Outputs: Vec<BitArrayDef> = {
+pub Outputs: Vec<String> = {
     // (a, b)
-    "(" <BitArrayArgs> ")",
+    "(" <BitArrayArgs> ")" => <>.into_iter().flat_map(|x| x).collect(),
     // x
-    BitArray => vec![<>],
+    BitArray => <>,
 };
 
-pub BitArray: BitArrayDef = {
-    Word => BitArrayDef::from_bit(<>),
-    <w: Word> <r: Range> => BitArrayDef::new(w, vec![r]),
+pub BitArray: Vec<String> = {
+    Word => vec![<>],
+    <w: Word> <r: Range> => {
+        let mut i = r.0;
+        if i == r.1 {
+            return vec![w];
+        }
+        let mut v = vec![];
+        let isign = if r.0 < r.1 { 1 } else { -1 };
+        while i != r.1 {
+            v.push(format!("{}${}", w, i));
+            i = i.wrapping_add(isign as u64);
+        }
+        v.push(format!("{}${}", w, i));
+
+        v
+    },
 };
 
 pub BitArrayArgs = Comma<BitArray>;
 
-pub Range: BidirectionalRange = {
-    "[" <a: Number> ":" <b: Number> "]" => BidirectionalRange(a, b)
+pub Range: (u64, u64) = {
+    "[" <a: Number> ":" <b: Number> "]" => (a, b)
 };
 
 pub Number: u64 = {

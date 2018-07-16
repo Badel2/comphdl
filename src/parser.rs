@@ -3,49 +3,15 @@ use comphdl1;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-// [7:0] is not the same as [0:7]
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct BidirectionalRange(pub u64, pub u64);
-
-impl BidirectionalRange {
-    fn one_bit() -> Self {
-        Self { 0: 0, 1: 0 }
-    }
-
-    fn count(&self) -> u64 {
-        if self.0 <= self.1 {
-            self.1 - self.0 + 1
-        } else {
-            self.0 - self.1 + 1
-        }
-    }
-}
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct BitArrayDef {
-    pub name: String,
-    pub dimensions: Vec<BidirectionalRange>,
-}
-
-impl BitArrayDef {
-    pub fn new(name: String, dimensions: Vec<BidirectionalRange>) -> Self {
-        Self { name, dimensions }
-    }
-    pub fn from_bit(name: String) -> Self {
-        // A bit is a 1-element 1D array
-        Self { name, dimensions: vec![BidirectionalRange::one_bit()] }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct CompInfo {
     pub name: String,
-    pub inputs: Vec<BitArrayDef>,
-    pub outputs: Vec<BitArrayDef>,
+    pub inputs: Vec<String>,
+    pub outputs: Vec<String>,
 }
 
 impl CompInfo {
-    pub fn new(name: String, inputs: Vec<BitArrayDef>, outputs: Vec<BitArrayDef>) -> Self {
+    pub fn new(name: String, inputs: Vec<String>, outputs: Vec<String>) -> Self {
         CompInfo {
             name, inputs, outputs,
         }
@@ -53,10 +19,10 @@ impl CompInfo {
     pub fn verify(&mut self) {
         let mut repetitions = HashMap::new();
         for s in self.inputs.iter() {
-            if let Some(_) = repetitions.get(&s.name) {
-                panic!("Input names must be unique, {}.{} isn't", self.name, s.name);
+            if let Some(_) = repetitions.get(s) {
+                panic!("Input names must be unique, {}.{} isn't", self.name, s);
             }
-            repetitions.insert(&s.name, ());
+            repetitions.insert(s, ());
         }
 
         // Output names must also be unique, example: 1-to-4
@@ -64,10 +30,10 @@ impl CompInfo {
         // The alternative is
         // quad(a) -> (a0, a1, a2, a3) { a0 = a; a1 = a; a2 = a; a3 = a; }
         for s in self.outputs.iter() {
-            if let Some(_) = repetitions.get(&s.name) {
-                panic!("Output names must be unique, '{}.{}' isn't", self.name, s.name);
+            if let Some(_) = repetitions.get(s) {
+                panic!("Output names must be unique, '{}.{}' isn't", self.name, s);
             }
-            repetitions.insert(&s.name, ());
+            repetitions.insert(s, ());
         }
     }
 }
@@ -77,7 +43,7 @@ struct Assignments {
     // Each entry in v is a vector of signals that are equivalent:
     // a = b; c = d; will create v = [[a, b], [c, d]]
     // And if we add a = c; it will become v = [[a, b, c, d]]
-    v: Vec<Vec<BitArrayDef>>,
+    v: Vec<Vec<String>>,
 }
 
 impl Assignments {
@@ -112,15 +78,15 @@ impl Assignments {
             match (left_pos, right_pos) {
                 (None, None) => {
                     // New group
-                    self.v.push(vec![left.clone(), right.clone()]);
+                    self.v.push(vec![left.to_string(), right.to_string()]);
                 }
                 (Some(i), None) => {
                     // Push right to group which contains left
-                    self.v[i].push(right.clone());
+                    self.v[i].push(right.to_string());
                 }
                 (None, Some(i)) => {
                     // Push left to group which contains right 
-                    self.v[i].push(left.clone());
+                    self.v[i].push(left.to_string());
                 }
                 (Some(i), Some(j)) if i != j => {
                     // Merge groups: a=b with c=d when b=d
@@ -234,7 +200,7 @@ impl CompDefinition {
         for ass in assignments.v.iter() {
             let ass2 = &ass[0];
             for ass1 in ass.iter().skip(1) {
-                println!("Replacing {} with {}", ass1.name, ass2.name);
+                println!("Replacing {} with {}", ass1, ass2);
                 let x = signals.remove(&ass1).unwrap_or(vec![]);
                 signals.entry(&ass2).or_insert(vec![]).extend(x);
             }
@@ -257,7 +223,7 @@ impl CompDefinition {
             }
             if from.len() > 1 {
                 return Err(format!("Signal {} is connected to more than one output: {:#?}",
-                       s.name, con));
+                       s, con));
             }
             // Remove duplicate connections (can be created using assignments)
             let to = to_set.drain().map(|(k, _v)| k).collect();
@@ -471,7 +437,6 @@ component Or2(a, b, c) -> x {
     println!("{:#?}", cf);
     assert!(cf.is_err());
 }
-
 #[test]
 fn array_1d() {
     let d = r#"
@@ -491,3 +456,4 @@ component ArrayTest1D(a[3:0]) -> b[3:0] {
     assert_eq!(s.num_inputs(), 4);
     assert_eq!(s.num_outputs(), 4);
 }
+
