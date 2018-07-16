@@ -33,8 +33,6 @@ struct Module {
 
 impl Module {
     fn from_structural(c: &Structural) -> Self {
-        let num_inputs = c.num_inputs();
-        let num_outputs = c.num_outputs();
         let num_components = c.components.len();
 
         let (ports, pin_addr_to_yosys_addr) = ports_and_addrs(c);
@@ -223,6 +221,7 @@ fn ports_and_addrs(c: &Structural) -> (HashMap<String, Port>, HashMap<ComponentI
     (ports, pin_addr_to_yosys_addr)
 }
 
+#[allow(dead_code)]
 pub fn yosys_addr_map(c: &Structural) -> HashMap<ComponentIndex, usize> {
     ports_and_addrs(c).1
 }

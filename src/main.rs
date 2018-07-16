@@ -26,7 +26,7 @@ pub use js_gui::*;
 use bit::RepInputIterator;
 use component::Component;
 use simulation::run_simulation;
-use std::io::Write;
+use std::io::{BufReader, Read, Write};
 use std::fs::File;
 
 fn yosys_netlist(c: &Component) {
@@ -36,9 +36,17 @@ fn yosys_netlist(c: &Component) {
     println!("{}", s);
 }
 
-fn parse_file(filename: &str, top: &str) {
-    // Create gate
-    let mut gate = parser::parse_file(filename, top);
+pub fn parse_file(filename: &str, top: &str) {
+    let file = File::open(filename).expect("Unable to open file");
+    let mut buf_reader = BufReader::new(file);
+    let mut bs = String::new();
+    buf_reader.read_to_string(&mut bs).unwrap();
+
+    let cf = parser::parse_str(&bs).unwrap();
+    let mux = cf.create_named(top).unwrap();
+    println!("{:#?}", mux);
+
+    let mut gate = mux;
 
     // Run simulation
     let mut buf = Vec::with_capacity(20_000_000);
@@ -52,6 +60,7 @@ fn parse_file(filename: &str, top: &str) {
     // Print netlist JSON
     yosys_netlist(&*gate);
 }
+
 
 // Do not start automatically when loaded from js
 #[cfg(feature = "stdweb")]

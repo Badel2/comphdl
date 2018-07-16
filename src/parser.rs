@@ -1,7 +1,5 @@
 use component::{ComponentIndex, Index, Component, CompIo, Structural, Nand, ConstantBit};
 use comphdl1;
-use std::io::{BufReader, Read};
-use std::fs::File;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -364,29 +362,6 @@ pub fn parse_str(bs: &str) -> Result<ComponentFactory, String> {
     let c = comphdl1::FileParser::new().parse(&bs);
 
     c.map_err(|e| format!("{}", e)).and_then(|c| ComponentFactory::new(c))
-}
-
-pub fn parse_file(filename: &str, top: &str) -> Box<Component> {
-    let file = File::open(filename).expect("Unable to open file");
-    let mut buf_reader = BufReader::new(file);
-    let mut bs = String::new();
-    buf_reader.read_to_string(&mut bs).unwrap();
-    /*
-    let parsed = comphdl1::FileParser::new().parse(&bs).unwrap();
-    for c in parsed {
-        println!("{:?}", c.0);
-        for sub_c in c.1 {
-            println!("> {:?}", sub_c);
-        }
-    }
-    panic!("Thank you for playing!");
-    */
-    let c = comphdl1::FileParser::new().parse(&bs).unwrap();
-    let s = ComponentFactory::new(c).unwrap();
-    let mux = s.create_named(top).unwrap();
-    println!("{:#?}", mux);
-
-    mux
 }
 
 #[test]
