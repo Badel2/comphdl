@@ -196,6 +196,35 @@ impl CompDefinition {
             }
         }
 
+        // Verify that arrays have unique names: (a, a[3:0]) should fail
+        let mut array_names = HashMap::new();
+        for (s, con) in &signals {
+            let parts: Vec<_> = s.split("$").collect();
+            if parts.len() > 1 {
+                assert!(parts.len() == 2);
+                array_names.insert(parts[0], 1); // 1D array
+            }
+        }
+
+        for group in assignments.v.iter() {
+            for name in group.iter() {
+                let parts: Vec<_> = name.split("$").collect();
+                if parts.len() > 1 {
+                    assert!(parts.len() == 2);
+                    array_names.insert(parts[0], 1); // 1D array
+                }
+            }
+        }
+
+        println!("ARRAY NAMES: {:?}", array_names);
+
+        for (name, dimension) in array_names {
+            if let Some(_) = signals.get(&name.to_string()) {
+                return Err(format!("Signal `{}` is used as an array, but also as a bit", name));
+            }
+        }
+
+
         // Apply assignments
         for ass in assignments.v.iter() {
             let ass2 = &ass[0];
