@@ -4,14 +4,42 @@ component RSLatch_raw(n_R, n_S) -> Q {
 }
 
 component RSLatch(R, S) -> Q {
-    NotButFilterAnythingSmallerThan2Ticks(R) -> n_R;
-    NotButFilterAnythingSmallerThan2Ticks(S) -> n_S;
+    NotFilter1Tick(R) -> n_R;
+    NotFilter1Tick(S) -> n_S;
     RSLatch_raw(n_R, n_S) -> Q;
 }
 
 component Buf(d) -> q { d = q; }
 
-component NotButFilterAnythingSmallerThan2Ticks(a) -> x {
+component NotFilter1Tick(a) -> x {
+// Like a Not, but only works when a remains the
+// same value for at least 2 ticks
     Buf(a) -> a1;
     Nand(a, a1) -> x;
+}
+
+component DLatch(enable, d) -> q {
+    // set = enable and d
+    // reset = enable and not d
+    Nand(enable, d) -> n_S;
+    Nand(n_S, enable) -> n_R;
+    RSLatch_raw(n_R, n_S) -> q;
+}
+
+component Register8(enable, d[7:0]) -> q[7:0] {
+    DLatch(enable, d[7]) -> q[7];
+    DLatch(enable, d[6]) -> q[6];
+    DLatch(enable, d[5]) -> q[5];
+    DLatch(enable, d[4]) -> q[4];
+    DLatch(enable, d[3]) -> q[3];
+    DLatch(enable, d[2]) -> q[2];
+    DLatch(enable, d[1]) -> q[1];
+    DLatch(enable, d[0]) -> q[0];
+}
+
+component Register32(enable, d[31:0]) -> q[31:0] {
+    Register8(enable, d[31:24]) -> q[31:24];
+    Register8(enable, d[23:16]) -> q[23:16];
+    Register8(enable, d[15:8]) -> q[15:8];
+    Register8(enable, d[7:0]) -> q[7:0];
 }

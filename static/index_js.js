@@ -3,7 +3,7 @@ Rust.comphdl.then(function(comphdl) {
     document.getElementById("loaded_wasm").style.display = "block";
 
     loadExample(false, "example1.txt");
-    var examples = ["example1.txt", "bufbufbuf.txt", "rslatch.txt"];
+    var examples = ["example1.txt", "bufbufbuf.txt", "ram.txt", "rslatch.txt"];
     var examplesSelect = document.getElementById("exampleName");
     examples.forEach(function(e, i) {
         var option = document.createElement('option');
