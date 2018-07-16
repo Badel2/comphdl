@@ -1,6 +1,6 @@
 use vcd;
 use bit::Bit;
-use parser::CompInfo;
+use parser::{BitArrayDef, CompInfo};
 use std;
 use std::io;
 use std::collections::HashMap;
@@ -223,6 +223,8 @@ impl Structural {
         // TODO: check that all the connections are valid
         let name = name.to_string();
         let PortNames { input, output } = port_names;
+        let input = input.into_iter().map(|x| BitArrayDef::from_bit(x)).collect();
+        let output = output.into_iter().map(|x| BitArrayDef::from_bit(x)).collect();
         let info = Rc::new(CompInfo::new(name, input, output));
 
         Structural::new(components, info)
@@ -328,13 +330,13 @@ impl Component for Structural {
             let instance_name = format!("{}-{}", self.name(), j);
             writer.add_module(&instance_name)?;
             for i in 0..self.num_inputs() {
-                let ref port_name = self.info.inputs[i];
+                let ref port_name = self.info.inputs[i].name;
                 vh.id.insert(vi, writer.add_wire(1,
                     &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
             }
             for i in 0..self.num_outputs() {
-                let ref port_name = self.info.outputs[i];
+                let ref port_name = self.info.outputs[i].name;
                 vh.id.insert(vi, writer.add_wire(1,
                     &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
@@ -397,7 +399,10 @@ impl Component for Structural {
         Ok(())
     }
     fn port_names(&self) -> PortNames {
-        PortNames::new_vec(self.info.inputs.clone(), self.info.outputs.clone())
+        PortNames::new_vec(
+            self.info.inputs.iter().map(|x| x.name.clone()).collect(),
+            self.info.outputs.iter().map(|x| x.name.clone()).collect()
+        )
     }
     fn internal_inputs(&self) -> Option<Vec<Vec<Bit>>> {
         let mut v = vec![];

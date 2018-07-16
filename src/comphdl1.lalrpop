@@ -1,4 +1,4 @@
-use parser::CompInfo;
+use parser::{CompInfo, BitArrayDef};
 
 grammar;
 
@@ -57,18 +57,24 @@ pub Word: String = {
 
 pub Name = Word;
 
-pub Inputs: Vec<String> = {
+pub Inputs: Vec<BitArrayDef> = {
     // (a, b)
-    "(" <VarArgs> ")",
+    "(" <BitArrayArgs> ")",
 };
 
 // pub Outputs = Inputs;
-pub Outputs: Vec<String> = {
+pub Outputs: Vec<BitArrayDef> = {
     // (a, b)
-    "(" <VarArgs> ")",
+    "(" <BitArrayArgs> ")",
     // x
-    Word => vec![<>],
+    BitArray => vec![<>],
 };
+
+pub BitArray: BitArrayDef = {
+    Word => BitArrayDef::from_bit(<>)
+};
+
+pub BitArrayArgs = Comma<BitArray>;
 
 pub VarArgs = Comma<Word>;
 
