@@ -3,6 +3,7 @@ use comphdl1;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub struct CompInfo {
@@ -413,10 +414,102 @@ fn insert_special_components(components: &mut HashMap<CompId, CompInfo>,
     //i += 1;
 }
 
+// Line/column code taken from
+// https://github.com/gluon-lang/gluon/blob/f8326d21a14b5f21d203e9c43fa5bb7f0688a74c/base/src/source.rs
+struct Lines {
+    starting_bytes: Vec<usize>,
+    end: usize,
+}
+
+impl Lines {
+    /// Creates a mapping for `src`
+    pub fn new<I>(src: I) -> Lines
+    where
+        I: IntoIterator<Item = u8>,
+    {
+        use std::iter;
+
+        let mut len = 0;
+        let starting_bytes = {
+            let input_indices = src.into_iter()
+                .inspect(|_| len += 1)
+                .enumerate()
+                .filter(|&(_, b)| b == b'\n')
+                .map(|(i, _)| i + 1); // index of first char in the line
+
+            iter::once(0).chain(input_indices).collect()
+        };
+        Lines {
+            starting_bytes,
+            end: len,
+        }
+    } 
+    /// Returns the byte offset of the start of `line_number`
+    pub fn line(&self, line_number: Line) -> Option<usize> {
+        let line_number = line_number.0 - 1;
+        self.starting_bytes.get(line_number).cloned()
+    }
+    /// Returns the line and column location of `byte`
+    pub fn location(&self, byte: usize) -> Option<Location> {
+        if byte <= self.end {
+            let line_index = self.line_number_at_byte(byte);
+
+            self.line(line_index).map(|line_byte| {
+                Location {
+                    line: line_index,
+                    column: Column(byte - line_byte + 1),
+                    absolute: byte,
+                }
+            })
+        } else {
+            None
+        }
+    }
+    /// Returns which line `byte` points to
+    pub fn line_number_at_byte(&self, byte: usize) -> Line {
+        let num_lines = self.starting_bytes.len();
+
+        Line(
+            (0..num_lines)
+                .filter(|&i| self.starting_bytes[i] > byte)
+                .map(|i| i - 1)
+                .next()
+                .unwrap_or(num_lines - 1) + 1
+        )
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+struct Line(usize);
+#[derive(Copy, Clone, Debug)]
+struct Column(usize);
+#[derive(Copy, Clone, Debug)]
+struct Location {
+    line: Line,
+    column: Column,
+    absolute: usize,
+}
+
+impl fmt::Display for Location {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "line {}, col {}", self.line.0, self.column.0)
+    }
+}
+
 pub fn parse_str(bs: &str) -> Result<ComponentFactory, String> {
     let c = comphdl1::FileParser::new().parse(&bs);
 
-    c.map_err(|e| format!("{}", e)).and_then(|c| ComponentFactory::new(c))
+    c.map_err(|e| {
+        let line_map = Lines::new(bs.bytes());
+        format!("{}", e.map_location(|x|
+            line_map.location(x).unwrap_or(
+                Location {
+                    line: Line(-1i8 as usize),
+                    column: Column(-1i8 as usize),
+                    absolute: -1i8 as usize
+                }
+        )))
+    }).and_then(|c| ComponentFactory::new(c))
 }
 
 #[test]
