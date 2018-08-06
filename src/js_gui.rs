@@ -1,8 +1,7 @@
 use std;
-use parser;
-use emit_json;
-use component::ComponentIndex;
-use bit::Bit;
+use comphdl::{emit_json, parser};
+use comphdl::component::ComponentIndex;
+use comphdl::bit::Bit;
 use stdweb::js_export;
 use stdweb::web::html_element::{InputElement, TextAreaElement};
 use stdweb::web::document;

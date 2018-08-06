@@ -1,31 +1,21 @@
 #![cfg_attr(feature = "stdweb", feature(proc_macro))]
 #![recursion_limit = "256"]
 
+extern crate comphdl;
+
 #[cfg(feature = "stdweb")]
 #[macro_use]
 extern crate stdweb;
-
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-extern crate vcd;
-
-mod emit_json;
-mod parser;
-mod bit;
-mod component;
-mod simulation;
-pub mod comphdl1;
 
 #[cfg(feature = "stdweb")]
 pub mod js_gui;
 #[cfg(feature = "stdweb")]
 pub use js_gui::*;
 
-use bit::RepInputIterator;
-use component::Component;
-use simulation::run_simulation;
+use comphdl::bit::RepInputIterator;
+use comphdl::component::Component;
+use comphdl::simulation::run_simulation;
+use comphdl::{emit_json, parser};
 use std::io::{BufReader, Read, Write};
 use std::fs::File;
 
