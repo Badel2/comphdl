@@ -2,12 +2,37 @@ Rust.comphdl.then(function(comphdl) {
     document.getElementById("loading_wasm").style.display = "none";
     document.getElementById("loaded_wasm").style.display = "block";
 
-    loadExample(false, "example1.txt");
+    /* Parse GET params: index.html?top=TopName&code=asdf */
+    // TODO: we should do this immediately on window load, without
+    // waiting for the Rust module
+    // Also, more options
+    var url = new URL(window.location.href);
+    var searchParams = new URLSearchParams(url.search);
+    var gotCode = searchParams.get('code');  // outputs "m2-m3-m4-m5"
+    var gotExampleName = searchParams.get('example');
+
+    if (gotCode != null) {
+        // Ideally this would create a new tab so we dont lose the existing code
+        editor.setValue(gotCode);
+    } else if (gotExampleName != null) {
+        loadExample(false, gotExampleName);
+    } else {
+        loadExample(false, "example1.txt");
+    }
+
+    var gotTop = searchParams.get('top');  // outputs "m2-m3-m4-m5"
+    if (gotTop != null) {
+        document.getElementById("top_name").value = gotTop;
+    }
+
     var examples = ["example1.txt", "bufbufbuf.txt", "ram.txt", "rslatch.txt"];
+    if (gotExampleName == null) {
+        gotExampleName = "example1.txt";
+    }
     var examplesSelect = document.getElementById("exampleName");
     examples.forEach(function(e, i) {
         var option = document.createElement('option');
-        option.selected = i === 0;
+        option.selected = e == gotExampleName;
         option.value = e;
         option.text = e;
         examplesSelect.append(option);
@@ -74,6 +99,23 @@ function loadExample(force, name) {
             editor.setValue(text);
         });
     });
+}
+
+function shareCode() {
+    var URLWithoutParams = [window.location.protocol, '//', window.location.host, window.location.pathname].join('');
+
+    var code = editor.getValue();
+    var codeURI = encodeURIComponent(code);
+
+    var topName = document.getElementById("top_name").value;
+    var topNameURI = encodeURIComponent(topName);
+
+    var fullURL = URLWithoutParams + '?top=' + topNameURI + '&code=' + codeURI;
+
+    share_div = document.getElementById("shareCodeDiv");
+    share_div.style.display = "block";
+    share_input = document.getElementById("shareCodeLink");
+    share_input.value = fullURL;
 }
 
 function runGui() {

@@ -63,6 +63,13 @@
             <div>
               <button id=loadExampleButton onClick="loadExampleSelect()">LOAD EXAMPLE:</button>
               <select id=exampleName></select>
+              <button id=shareCode onClick="shareCode()">SHARE LINK</button>
+            </div>
+            <div id=shareCodeDiv style="display: none;">
+              Manually copy the following link:
+              <a href="#" onClick="document.getElementById('shareCodeDiv').style.display='none'; return false;">(hide)</a>
+              <br>
+              <input type="text" id="shareCodeLink" style="width: 95%;"></input>
             </div>
             <div>
               <input type="text" id="top_name" placeholder="Top component name"></input>
@@ -92,8 +99,7 @@
                 </div>
             </div>
             <div>
-              <div id="comphdl_definition" style="height:500px; margin-right: 8px;">
-              </div>
+              <div id="comphdl_definition" style="height:500px; margin-right: 8px;"></div>
             </div>
         </div>
         <div class="div-3">
