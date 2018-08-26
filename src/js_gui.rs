@@ -1,9 +1,8 @@
-use std;
 use comphdl::{emit_json, parser};
 use comphdl::component::ComponentIndex;
 use comphdl::bit::Bit;
 use stdweb::js_export;
-use stdweb::web::html_element::{InputElement, TextAreaElement};
+use stdweb::web::html_element::TextAreaElement;
 use stdweb::web::document;
 use stdweb::web::IParentNode;
 use stdweb::unstable::TryInto;
@@ -45,7 +44,7 @@ pub fn run_js_gui() -> String {
     };
     let top = get_element_by_id_value("top_name");
 
-    let mut cf = match parser::parse_str(&definition) {
+    let cf = match parser::parse_str(&definition) {
         Ok(cf) => cf,
         Err(e) => {
             return format!("Error parsing source code: {}", e);
