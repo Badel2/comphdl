@@ -1,3 +1,6 @@
 [submodule "netlistsvg"]
 	path = netlistsvg
 	url = https://github.com/Badel2/netlistsvg
+[submodule "static/ace-builds"]
+	path = static/ace-builds
+	url = https://github.com/ajaxorg/ace-builds/

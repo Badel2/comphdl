@@ -63,6 +63,13 @@
             <div>
               <button id=loadExampleButton onClick="loadExampleSelect()">LOAD EXAMPLE:</button>
               <select id=exampleName></select>
+              <button id=shareCode onClick="shareCode()">SHARE LINK</button>
+            </div>
+            <div id=shareCodeDiv style="display: none;">
+              Manually copy the following link:
+              <a href="#" onClick="document.getElementById('shareCodeDiv').style.display='none'; return false;">(hide)</a>
+              <br>
+              <input type="text" id="shareCodeLink" style="width: 95%;"></input>
             </div>
             <div>
               <input type="text" id="top_name" placeholder="Top component name"></input>
@@ -92,8 +99,7 @@
                 </div>
             </div>
             <div>
-              <textarea id="comphdl_definition" class="code" style="height:500px;">
-              </textarea>
+              <div id="comphdl_definition" style="height:500px; margin-right: 8px;"></div>
             </div>
         </div>
         <div class="div-3">
@@ -117,6 +123,12 @@
             </svg>
         </div>
         </div>
+        <script src="/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+        <script>
+            var editor = ace.edit("comphdl_definition");
+            editor.setTheme("ace/theme/tomorrow");
+            editor.session.setMode("ace/mode/rust");
+        </script>
         <script src="comphdl.js"></script>
         <script src="elk.bundled.js"></script>
         <script src="netlistsvg.js"></script>
