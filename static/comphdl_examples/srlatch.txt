@@ -1,45 +1,31 @@
-component RSLatch_raw(n_R, n_S) -> Q {
+component nSnRLatch(n_S, n_R) -> (Q, n_Q) {
     Nand(n_S, n_Q) -> Q;
     Nand(n_R, Q) -> n_Q;
 }
 
-component RSLatch(R, S) -> Q {
-    NotFilter1Tick(R) -> n_R;
-    NotFilter1Tick(S) -> n_S;
-    RSLatch_raw(n_R, n_S) -> Q;
+component SRLatch(E, S, R) -> Q {
+    Nand(E, S) -> n_S;
+    Nand(E, R) -> n_R;
+    nSnRLatch(n_S, n_R) -> (Q, n_Q);
 }
 
-component Buf(d) -> q { d = q; }
-
-component NotFilter1Tick(a) -> x {
-// Like a Not, but only works when a remains the
-// same value for at least 2 ticks
-    Buf(a) -> a1;
-    Nand(a, a1) -> x;
+component DLatch(E, D) -> Q {
+    Nand(D) -> n_D;
+    Nand(n_D, E) -> n_R;
+    Nand(D, E) -> n_S;
+    nSnRLatch(n_S, n_R) -> (Q, n_Q);
 }
 
-component DLatch(enable, d) -> q {
-    // set = enable and d
-    // reset = enable and not d
-    Nand(enable, d) -> n_S;
-    Nand(n_S, enable) -> n_R;
-    RSLatch_raw(n_R, n_S) -> q;
+component Reg4(E, D3, D2, D1, D0) -> (Q3, Q2, Q1, Q0) {
+    DLatch(E, D3) -> Q3;
+    DLatch(E, D2) -> Q2;
+    DLatch(E, D1) -> Q1;
+    DLatch(E, D0) -> Q0;
 }
 
-component Register8(enable, d[7:0]) -> q[7:0] {
-    DLatch(enable, d[7]) -> q[7];
-    DLatch(enable, d[6]) -> q[6];
-    DLatch(enable, d[5]) -> q[5];
-    DLatch(enable, d[4]) -> q[4];
-    DLatch(enable, d[3]) -> q[3];
-    DLatch(enable, d[2]) -> q[2];
-    DLatch(enable, d[1]) -> q[1];
-    DLatch(enable, d[0]) -> q[0];
+component Reg8(E, D[7:0]) -> Q[7:0] {
+    Reg4(E, D[7:4]) -> Q[7:4];
+    Reg4(E, D[3:0]) -> Q[3:0];
 }
 
-component Register32(enable, d[31:0]) -> q[31:0] {
-    Register8(enable, d[31:24]) -> q[31:24];
-    Register8(enable, d[23:16]) -> q[23:16];
-    Register8(enable, d[15:8]) -> q[15:8];
-    Register8(enable, d[7:0]) -> q[7:0];
-}
+
