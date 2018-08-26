@@ -25,7 +25,7 @@ Rust.comphdl.then(function(comphdl) {
         document.getElementById("top_name").value = gotTop;
     }
 
-    var examples = ["example1.txt", "bufbufbuf.txt", "ram.txt", "rslatch.txt"];
+    var examples = ["example1.txt", "bufbufbuf.txt", "ram.txt", "srlatch.txt"];
     if (gotExampleName == null) {
         gotExampleName = "example1.txt";
     }
