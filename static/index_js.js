@@ -124,6 +124,13 @@ function runGui() {
         // TODO: check if a thread is already running and kill it
         if (alive.checked) {
             // TODO: kill it
+            alert("Stop the program before running it again");
+            // We cannot kill it here because the Rust code will not update
+            // and we get a classical race condition.
+            // This could maybe be fixed by giving each Rust instance its own
+            // uuid, and have a field "running_uuid" which must match or the
+            // program will stop
+            return;
         }
         alive.checked = true;
         var error_string = comphdl.run_js_gui();
