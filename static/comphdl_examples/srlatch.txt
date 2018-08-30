@@ -10,9 +10,8 @@ component SRLatch(E, S, R) -> Q {
 }
 
 component DLatch(E, D) -> Q {
-    Nand(D) -> n_D;
-    Nand(n_D, E) -> n_R;
     Nand(D, E) -> n_S;
+    Nand(n_S, E) -> n_R;
     nSnRLatch(n_S, n_R) -> (Q, n_Q);
 }
 
