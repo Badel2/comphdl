@@ -1,4 +1,4 @@
-use component::{ComponentIndex, Index, Component, CompIo, Structural, Nand, ConstantBit};
+use component::{ComponentIndex, Index, Component, CompIo, Structural, Nand, ConstantBit, Stdin};
 use comphdl1;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -167,7 +167,7 @@ impl CompDefinition {
 
             // Verify than number of inputs and outputs match
             // TODO: create is_builtin function
-            if ["Nand", "ConstantBit"].contains(&c.name.as_str()) {
+            if ["Nand", "ConstantBit", "Stdin"].contains(&c.name.as_str()) {
                 // Builtin gates can have a generic number of inputs or outputs,
                 // we dont check them here, but they are checked when creating
                 // these components (create_builtin)
@@ -398,6 +398,11 @@ impl ComponentFactory {
                 assert_eq!(num_outputs, 3);
                 Box::new(ConstantBit::new())
             }
+            "Stdin" => {
+                assert_eq!(num_inputs, 1);
+                assert_eq!(num_outputs, 8);
+                Box::new(Stdin::new())
+            }
             _ => return None,
         })
     }
@@ -411,6 +416,9 @@ fn insert_special_components(components: &mut HashMap<CompId, CompInfo>,
     i += 1;
     components.insert(CompId(i), CompInfo::new("ConstantBit".into(), vec![], vec![])); // TODO
     comp_id.insert("ConstantBit".into(), CompId(i));
+    i += 1;
+    components.insert(CompId(i), CompInfo::new("Stdin".into(), vec![], vec![])); // TODO
+    comp_id.insert("Stdin".into(), CompId(i));
     //i += 1;
 }
 

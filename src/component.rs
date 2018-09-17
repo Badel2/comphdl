@@ -3,6 +3,7 @@ use bit::Bit;
 use parser::CompInfo;
 use std;
 use std::io;
+use std::io::Read;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -156,6 +157,57 @@ impl Component for ConstantBit {
     }
     fn port_names(&self) -> PortNames {
         PortNames::new(&[], &["o0", "o1", "oX"])
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Stdin {
+    last_clk: Bit,
+    last_out: Vec<Bit>,
+}
+
+impl Stdin {
+    pub fn new() -> Self {
+        Self { last_clk: Bit::X, last_out: vec![Bit::X; 8] }
+    }
+}
+
+impl Component for Stdin {
+    fn update(&mut self, input: &[Bit]) -> Vec<Bit> {
+        assert_eq!(input.len(), 1);
+        // On rising edge:
+        if self.last_clk == Bit::L && input[0] == Bit::H {
+            let mut buf = [0u8; 1];
+            let mut stdin = io::stdin();
+            if stdin.read_exact(&mut buf).is_err() {
+                // On read error return X
+                self.last_out = vec![Bit::X; 8];
+            } else {
+                self.last_out = Bit::from_u8(buf[0]);
+            }
+        }
+
+        self.last_clk = input[0];
+
+        self.last_out.clone()
+    }
+    fn needs_update(&self) -> bool {
+        false // We get new input on clk rising edge
+    }
+    fn num_inputs(&self) -> usize {
+        1
+    }
+    fn num_outputs(&self) -> usize {
+        8
+    }
+    fn name(&self) -> &str {
+        "Stdin"
+    }
+    fn box_clone(&self) -> Box<Component> {
+        Box::new((*self).clone())
+    }
+    fn port_names(&self) -> PortNames {
+        PortNames::new(&["clk"], &["x7", "x6", "x5", "x4", "x3", "x2", "x1", "x0"])
     }
 }
 

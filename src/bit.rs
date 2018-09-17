@@ -17,6 +17,24 @@ impl From<Bit> for Value {
     }
 }
 
+impl Bit {
+    pub fn from_bool(x: bool) -> Bit {
+        if x { Bit::H } else { Bit::L }
+    }
+    pub fn from_u8(x: u8) -> Vec<Bit> {
+        vec![
+            Bit::from_bool((x >> 7) & 1 != 0),
+            Bit::from_bool((x >> 6) & 1 != 0),
+            Bit::from_bool((x >> 5) & 1 != 0),
+            Bit::from_bool((x >> 4) & 1 != 0),
+            Bit::from_bool((x >> 3) & 1 != 0),
+            Bit::from_bool((x >> 2) & 1 != 0),
+            Bit::from_bool((x >> 1) & 1 != 0),
+            Bit::from_bool((x >> 0) & 1 != 0),
+        ]
+    }
+}
+
 // Returns all the n-bit combinations in order, loops infinitely
 #[allow(dead_code)]
 pub struct InfiniteInputIterator {
