@@ -6,6 +6,8 @@ use stdweb::web::html_element::TextAreaElement;
 use stdweb::web::document;
 use stdweb::web::IParentNode;
 use stdweb::unstable::TryInto;
+use std::rc::Rc;
+use std::io::{BufReader, Cursor};
 
 fn get_element_by_id_value(id: &str) -> String {
     let checked_raw = js! {
@@ -44,22 +46,28 @@ pub fn run_js_gui() -> String {
     };
     let top = get_element_by_id_value("top_name");
 
-    let cf = match parser::parse_str(&definition) {
-        Ok(cf) => cf,
-        Err(e) => {
-            return format!("Error parsing source code: {}", e);
-        }
-    };
-
-    let mut c = match cf.create_named(&top) {
-        Some(c) => c,
-        None => {
-            if top == "" {
-                return format!("You must specify a top component name");
+    let mut c = {
+        let mut cf = match parser::parse_str(&definition) {
+            Ok(cf) => cf,
+            Err(e) => {
+                return format!("Error parsing source code: {}", e);
             }
-            return format!("Top component `{}` not found", top);
-            // TODO: did you mean ...? (find components with similar names)
-        }
+        };
+
+        let stdin_bufread = get_element_by_id_value("stdin_bufread");
+        cf.set_stdin_bufread(Rc::new(Cursor::new(stdin_bufread.into_bytes())));
+
+        let mut c = match cf.create_named(&top) {
+            Some(c) => c,
+            None => {
+                if top == "" {
+                    return format!("You must specify a top component name");
+                }
+                return format!("Top component `{}` not found", top);
+                // TODO: did you mean ...? (find components with similar names)
+            }
+        };
+        c
     };
 
     // Borrow the component as a structural to generate the netlist

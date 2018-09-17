@@ -2,8 +2,10 @@ use vcd;
 use bit::Bit;
 use parser::CompInfo;
 use std;
+use std::fmt;
 use std::io;
 use std::io::Read;
+use std::io::BufRead;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -160,15 +162,37 @@ impl Component for ConstantBit {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
+pub struct RcBufRead(pub Rc<BufRead>);
+
+// Manually implement debug because Rc<BufRead> does not implement it
+impl fmt::Debug for RcBufRead {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("RcBufRead")
+            .field("buf_rc_count", &Rc::strong_count(&self.0))
+            .finish()
+    }
+}
+
+
+#[derive(Clone, Debug)]
 pub struct Stdin {
     last_clk: Bit,
     last_out: Vec<Bit>,
+    // Hack: using Rc instead of Box because we need to Clone everything which
+    // implements the Component trait
+    buf: Option<RcBufRead>,
 }
 
 impl Stdin {
     pub fn new() -> Self {
-        Self { last_clk: Bit::X, last_out: vec![Bit::X; 8] }
+        Self { last_clk: Bit::X, last_out: vec![Bit::X; 8], buf: None }
+    }
+    pub fn with_bufread(r: Rc<BufRead>) -> Self {
+        let mut s = Self::new();
+        s.buf = Some(RcBufRead(r));
+
+        s
     }
 }
 
@@ -178,12 +202,24 @@ impl Component for Stdin {
         // On rising edge:
         if self.last_clk == Bit::L && input[0] == Bit::H {
             let mut buf = [0u8; 1];
-            let mut stdin = io::stdin();
-            if stdin.read_exact(&mut buf).is_err() {
-                // On read error return X
-                self.last_out = vec![Bit::X; 8];
+            if self.buf.is_none() {
+                let stdin = io::stdin();
+                let mut stdin = stdin.lock();
+                if stdin.read_exact(&mut buf).is_ok() {
+                    self.last_out = Bit::from_u8(buf[0]);
+                } else {
+                    // On read error return X
+                    self.last_out = vec![Bit::X; 8];
+                }
             } else {
-                self.last_out = Bit::from_u8(buf[0]);
+                let stdin = &mut self.buf.as_mut().unwrap().0;
+                let mut stdin = Rc::get_mut(stdin);
+                if stdin.is_some() && stdin.unwrap().read_exact(&mut buf).is_ok() {
+                    self.last_out = Bit::from_u8(buf[0]);
+                } else {
+                    // On read error return X
+                    self.last_out = vec![Bit::X; 8];
+                }
             }
         }
 

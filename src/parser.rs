@@ -1,8 +1,9 @@
-use component::{ComponentIndex, Index, Component, CompIo, Structural, Nand, ConstantBit, Stdin};
+use component::{ComponentIndex, Index, Component, CompIo, Structural, Nand, ConstantBit, Stdin, RcBufRead};
 use comphdl1;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::io::BufRead;
 use std::fmt;
 
 #[derive(Debug, Clone)]
@@ -292,6 +293,7 @@ pub struct ComponentFactory {
     components: HashMap<CompId, Rc<CompInfo>>,
     comp_def: HashMap<CompId, Rc<CompDefinition>>,
     cache: RefCell<HashMap<CompId, Box<Component>>>,
+    stdin_bufread: Option<RcBufRead>,
 }
 
 impl ComponentFactory {
@@ -324,7 +326,7 @@ impl ComponentFactory {
         let components = components.into_iter().map(|(k, v)| (k, Rc::new(v))).collect();
         let comp_def = comp_def.into_iter().map(|(k, v)| (k, Rc::new(v))).collect();
 
-        Ok(Self { components, comp_id, comp_def, cache: RefCell::new(HashMap::new()) })
+        Ok(Self { components, comp_id, comp_def, cache: RefCell::new(HashMap::new()), stdin_bufread: None })
     }
     pub fn create_named(&self, name: &str) -> Option<Box<Component>> {
         println!("Creating component {}", name);
@@ -340,10 +342,12 @@ impl ComponentFactory {
         let ref outputs = self.components[&c_id].outputs;
         let ref name = self.components[&c_id].name;
 
+        /*
         if let Some(c) = self.cache.borrow().get(&c_id) {
             println!("Got cached component id {}: {}", c_id.0, name);
             return c.clone();
         }
+        */
 
         println!("Creating component with id {}: {}", c_id.0, name);
         let ref def = self.comp_def[&c_id];
@@ -381,7 +385,7 @@ impl ComponentFactory {
 
         let c = Box::new(gate);
 
-        self.cache.borrow_mut().insert(c_id, c.clone());
+        //self.cache.borrow_mut().insert(c_id, c.clone());
 
         c
     }
@@ -401,10 +405,17 @@ impl ComponentFactory {
             "Stdin" => {
                 assert_eq!(num_inputs, 1);
                 assert_eq!(num_outputs, 8);
-                Box::new(Stdin::new())
+                if self.stdin_bufread.is_some() {
+                    Box::new(Stdin::with_bufread(self.stdin_bufread.as_ref().unwrap().0.clone()))
+                } else {
+                    Box::new(Stdin::new())
+                }
             }
             _ => return None,
         })
+    }
+    pub fn set_stdin_bufread(&mut self, r: Rc<BufRead>) {
+        self.stdin_bufread = Some(RcBufRead(r));
     }
 }
 

@@ -18,6 +18,7 @@ use comphdl::simulation::run_simulation;
 use comphdl::{emit_json, parser};
 use std::io::{BufReader, Read, Write};
 use std::fs::File;
+use std::rc::Rc;
 
 fn yosys_netlist(c: &Component) {
     // We can only generate netlists from structural, not from component
@@ -32,8 +33,13 @@ pub fn parse_file(filename: &str, top: &str) {
     let mut bs = String::new();
     buf_reader.read_to_string(&mut bs).unwrap();
 
-    let cf = parser::parse_str(&bs).unwrap();
-    let mux = cf.create_named(top).unwrap();
+    let mux = {
+        let mut cf = parser::parse_str(&bs).unwrap();
+        let stdin_bufread = File::open("stdin.txt").expect("Unable to open file");
+        cf.set_stdin_bufread(Rc::new(BufReader::new(stdin_bufread)));
+        let mux = cf.create_named(top).unwrap();
+        mux
+    };
     println!("{:#?}", mux);
 
     let mut gate = mux;

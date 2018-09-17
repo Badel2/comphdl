@@ -9,8 +9,10 @@ pub fn run_simulation(w: &mut io::Write,
                   ticks: usize) -> io::Result<()> {
     let mut writer = vcd::Writer::new(w);
 
-    let a = c.clone_as_structural();
-    println!("{:#?}", a);
+    {
+        let a = c.clone_as_structural();
+        println!("{:#?}", a);
+    }
 
     // Write the header
     writer.timescale(1, TimescaleUnit::NS)?; // 1 tick = 1 ns
