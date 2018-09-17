@@ -179,6 +179,7 @@ impl fmt::Debug for RcBufRead {
 pub struct Stdin {
     last_clk: Bit,
     last_out: Vec<Bit>,
+    eof: Bit,
     // Hack: using Rc instead of Box because we need to Clone everything which
     // implements the Component trait
     buf: Option<RcBufRead>,
@@ -186,7 +187,7 @@ pub struct Stdin {
 
 impl Stdin {
     pub fn new() -> Self {
-        Self { last_clk: Bit::X, last_out: vec![Bit::X; 8], buf: None }
+        Self { last_clk: Bit::X, last_out: vec![Bit::X; 8], eof: Bit::X, buf: None }
     }
     pub fn with_bufread(r: Rc<BufRead>) -> Self {
         let mut s = Self::new();
@@ -201,23 +202,31 @@ impl Component for Stdin {
         assert_eq!(input.len(), 1);
         // On rising edge:
         if self.last_clk == Bit::L && input[0] == Bit::H {
+            self.eof = Bit::L;
             let mut buf = [0u8; 1];
             if self.buf.is_none() {
                 let stdin = io::stdin();
                 let mut stdin = stdin.lock();
-                if stdin.read_exact(&mut buf).is_ok() {
-                    self.last_out = Bit::from_u8(buf[0]);
-                } else {
-                    // On read error return X
-                    self.last_out = vec![Bit::X; 8];
+                match stdin.read_exact(&mut buf) {
+                    Ok(_) => self.last_out = Bit::from_u8(buf[0]),
+                    Err(_) => {
+                        self.last_out = vec![Bit::X; 8];
+                        self.eof = Bit::H;
+                    }
                 }
             } else {
                 let stdin = &mut self.buf.as_mut().unwrap().0;
                 let mut stdin = Rc::get_mut(stdin);
-                if stdin.is_some() && stdin.unwrap().read_exact(&mut buf).is_ok() {
-                    self.last_out = Bit::from_u8(buf[0]);
+                if stdin.is_some() {
+                    match stdin.unwrap().read_exact(&mut buf) {
+                        Ok(_) => self.last_out = Bit::from_u8(buf[0]),
+                        Err(_) => {
+                            self.last_out = vec![Bit::X; 8];
+                            self.eof = Bit::H;
+                        }
+                    }
                 } else {
-                    // On read error return X
+                    // The Rc has more than one owner, panic?
                     self.last_out = vec![Bit::X; 8];
                 }
             }
@@ -225,7 +234,9 @@ impl Component for Stdin {
 
         self.last_clk = input[0];
 
-        self.last_out.clone()
+        let mut out = vec![self.eof];
+        out.extend(self.last_out.clone());
+        out
     }
     fn needs_update(&self) -> bool {
         false // We get new input on clk rising edge
@@ -234,7 +245,7 @@ impl Component for Stdin {
         1
     }
     fn num_outputs(&self) -> usize {
-        8
+        9
     }
     fn name(&self) -> &str {
         "Stdin"
@@ -243,7 +254,7 @@ impl Component for Stdin {
         Box::new((*self).clone())
     }
     fn port_names(&self) -> PortNames {
-        PortNames::new(&["clk"], &["x7", "x6", "x5", "x4", "x3", "x2", "x1", "x0"])
+        PortNames::new(&["clk"], &["EOF", "x7", "x6", "x5", "x4", "x3", "x2", "x1", "x0"])
     }
 }
 

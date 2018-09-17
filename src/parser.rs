@@ -404,7 +404,7 @@ impl ComponentFactory {
             }
             "Stdin" => {
                 assert_eq!(num_inputs, 1);
-                assert_eq!(num_outputs, 8);
+                assert_eq!(num_outputs, 9);
                 if self.stdin_bufread.is_some() {
                     Box::new(Stdin::with_bufread(self.stdin_bufread.as_ref().unwrap().0.clone()))
                 } else {
