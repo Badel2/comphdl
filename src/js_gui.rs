@@ -7,6 +7,7 @@ use stdweb::web::document;
 use stdweb::web::IParentNode;
 use stdweb::unstable::TryInto;
 use std::rc::Rc;
+use std::cell::RefCell;
 use std::io::{self, BufReader, Cursor, Write};
 
 fn get_element_by_id_value(id: &str) -> String {
@@ -93,8 +94,8 @@ pub fn run_js_gui() -> String {
         };
 
         let stdin_bufread = get_element_by_id_value("stdin_bufread");
-        cf.set_stdin_bufread(Rc::new(Cursor::new(stdin_bufread.into_bytes())));
-        cf.set_stdout_bufwrite(Rc::new(ValueWriter::new("stdout_bufwrite".into())));
+        cf.set_stdin_vec(stdin_bufread.into_bytes());
+        cf.set_stdout_bufwrite(Rc::new(RefCell::new(ValueWriter::new("stdout_bufwrite".into()))));
 
         let mut c = match cf.create_named(&top) {
             Some(c) => c,

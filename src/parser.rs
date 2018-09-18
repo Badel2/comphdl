@@ -3,7 +3,7 @@ use comphdl1;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
-use std::io::{BufRead, Write};
+use std::io::{BufRead, Cursor, Write};
 use std::fmt;
 
 #[derive(Debug, Clone)]
@@ -427,8 +427,17 @@ impl ComponentFactory {
     pub fn set_stdin_bufread(&mut self, r: Rc<BufRead>) {
         self.stdin_bufread = Some(RcBufRead(r));
     }
-    pub fn set_stdout_bufwrite(&mut self, r: Rc<Write>) {
+    pub fn set_stdin_vec(&mut self, v: Vec<u8>) {
+        self.stdin_bufread = Some(RcBufRead(Rc::new(Cursor::new(v))));
+    }
+    pub fn set_stdout_bufwrite(&mut self, r: Rc<RefCell<Write>>) {
         self.stdout_bufwrite = Some(RcWrite(r));
+    }
+    // Use the returned value to read the data written to the vector
+    pub fn set_stdout_vec(&mut self, v: Vec<u8>) -> Rc<RefCell<Cursor<Vec<u8>>>> {
+        let handle = Rc::new(RefCell::new(Cursor::new(v)));
+        self.stdout_bufwrite = Some(RcWrite(handle.clone()));
+        handle
     }
 }
 

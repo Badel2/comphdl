@@ -8,6 +8,7 @@ use std::io::Read;
 use std::io::{BufRead, Write};
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 static VCD_SHOW_NAND: bool = true;
 
@@ -258,9 +259,9 @@ impl Component for Stdin {
     }
 }
 #[derive(Clone)]
-pub struct RcWrite(pub Rc<Write>);
+pub struct RcWrite(pub Rc<RefCell<Write>>);
 
-// Manually implement debug because Rc<Write> does not implement it
+// Manually implement debug because dyn Write does not implement it
 impl fmt::Debug for RcWrite {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("RcWrite")
@@ -281,7 +282,7 @@ impl Stdout {
     pub fn new() -> Self {
         Self { last_clk: Bit::X, buf: None }
     }
-    pub fn with_bufwrite(r: Rc<Write>) -> Self {
+    pub fn with_bufwrite(r: Rc<RefCell<Write>>) -> Self {
         let mut s = Self::new();
         s.buf = Some(RcWrite(r));
 
@@ -303,10 +304,10 @@ impl Component for Stdout {
                     Err(_) => {}
                 }
             } else {
-                let stdout = &mut self.buf.as_mut().unwrap().0;
-                let mut stdout = Rc::get_mut(stdout);
-                if stdout.is_some() {
-                    match stdout.unwrap().write_all(&mut buf) {
+                let stdout = self.buf.as_ref().unwrap();
+                let stdout = stdout.0.try_borrow_mut();
+                if let Ok(mut stdout) = stdout {
+                    match stdout.write_all(&mut buf) {
                         Ok(_) => {}
                         Err(_) => {}
                     }
