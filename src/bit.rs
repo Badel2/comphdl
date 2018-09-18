@@ -33,6 +33,15 @@ impl Bit {
             Bit::from_bool((x >> 0) & 1 != 0),
         ]
     }
+    pub fn bit8_into_u8(b: &[Bit]) -> u8 {
+        assert_eq!(b.len(), 8);
+        let mut x = 0;
+        for i in 0..8 {
+            x |= ((b[i] == Bit::H) as u8) << (7-i);
+        }
+
+        x
+    }
 }
 
 // Returns all the n-bit combinations in order, loops infinitely

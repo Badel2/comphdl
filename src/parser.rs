@@ -1,9 +1,9 @@
-use component::{ComponentIndex, Index, Component, CompIo, Structural, Nand, ConstantBit, Stdin, RcBufRead};
+use component::{ComponentIndex, Index, Component, CompIo, Structural, Nand, ConstantBit, Stdin, RcBufRead, Stdout, RcWrite};
 use comphdl1;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
-use std::io::BufRead;
+use std::io::{BufRead, Write};
 use std::fmt;
 
 #[derive(Debug, Clone)]
@@ -168,7 +168,7 @@ impl CompDefinition {
 
             // Verify than number of inputs and outputs match
             // TODO: create is_builtin function
-            if ["Nand", "ConstantBit", "Stdin"].contains(&c.name.as_str()) {
+            if ["Nand", "ConstantBit", "Stdin", "Stdout"].contains(&c.name.as_str()) {
                 // Builtin gates can have a generic number of inputs or outputs,
                 // we dont check them here, but they are checked when creating
                 // these components (create_builtin)
@@ -294,6 +294,7 @@ pub struct ComponentFactory {
     comp_def: HashMap<CompId, Rc<CompDefinition>>,
     cache: RefCell<HashMap<CompId, Box<Component>>>,
     stdin_bufread: Option<RcBufRead>,
+    stdout_bufwrite: Option<RcWrite>,
 }
 
 impl ComponentFactory {
@@ -326,7 +327,7 @@ impl ComponentFactory {
         let components = components.into_iter().map(|(k, v)| (k, Rc::new(v))).collect();
         let comp_def = comp_def.into_iter().map(|(k, v)| (k, Rc::new(v))).collect();
 
-        Ok(Self { components, comp_id, comp_def, cache: RefCell::new(HashMap::new()), stdin_bufread: None })
+        Ok(Self { components, comp_id, comp_def, cache: RefCell::new(HashMap::new()), stdin_bufread: None, stdout_bufwrite: None })
     }
     pub fn create_named(&self, name: &str) -> Option<Box<Component>> {
         println!("Creating component {}", name);
@@ -411,11 +412,23 @@ impl ComponentFactory {
                     Box::new(Stdin::new())
                 }
             }
+            "Stdout" => {
+                assert_eq!(num_inputs, 9);
+                assert_eq!(num_outputs, 0);
+                if self.stdin_bufread.is_some() {
+                    Box::new(Stdout::with_bufwrite(self.stdout_bufwrite.as_ref().unwrap().0.clone()))
+                } else {
+                    Box::new(Stdout::new())
+                }
+            }
             _ => return None,
         })
     }
     pub fn set_stdin_bufread(&mut self, r: Rc<BufRead>) {
         self.stdin_bufread = Some(RcBufRead(r));
+    }
+    pub fn set_stdout_bufwrite(&mut self, r: Rc<Write>) {
+        self.stdout_bufwrite = Some(RcWrite(r));
     }
 }
 
@@ -430,6 +443,9 @@ fn insert_special_components(components: &mut HashMap<CompId, CompInfo>,
     i += 1;
     components.insert(CompId(i), CompInfo::new("Stdin".into(), vec![], vec![])); // TODO
     comp_id.insert("Stdin".into(), CompId(i));
+    i += 1;
+    components.insert(CompId(i), CompInfo::new("Stdout".into(), vec![], vec![])); // TODO
+    comp_id.insert("Stdout".into(), CompId(i));
     //i += 1;
 }
 

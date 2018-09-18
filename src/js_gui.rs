@@ -7,7 +7,7 @@ use stdweb::web::document;
 use stdweb::web::IParentNode;
 use stdweb::unstable::TryInto;
 use std::rc::Rc;
-use std::io::{BufReader, Cursor};
+use std::io::{self, BufReader, Cursor, Write};
 
 fn get_element_by_id_value(id: &str) -> String {
     let checked_raw = js! {
@@ -28,6 +28,44 @@ fn get_element_by_id_value(id: &str) -> String {
 
             format!("")
         }
+    }
+}
+
+struct ValueWriter {
+    id: String,
+}
+
+impl ValueWriter {
+    fn new(id: String) -> Self {
+        js! {
+            var t = document.getElementById(@{&id});
+            if(t != null) {
+                t.value = "";
+            }
+        }
+        Self { id }
+    }
+}
+
+impl Write for ValueWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let id = &self.id;
+        let bufstring: String = String::from_utf8_lossy(buf).into();
+        js! {
+            var t = document.getElementById(@{id});
+            if(t != null) {
+                t.value += @{bufstring};
+                // Scroll to bottom
+                t.scrollTop = t.scrollHeight;
+            }
+        }
+
+        // We can't fail
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        // We always flush anyway
+        Ok(())
     }
 }
 
@@ -56,6 +94,7 @@ pub fn run_js_gui() -> String {
 
         let stdin_bufread = get_element_by_id_value("stdin_bufread");
         cf.set_stdin_bufread(Rc::new(Cursor::new(stdin_bufread.into_bytes())));
+        cf.set_stdout_bufwrite(Rc::new(ValueWriter::new("stdout_bufwrite".into())));
 
         let mut c = match cf.create_named(&top) {
             Some(c) => c,

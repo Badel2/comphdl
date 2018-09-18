@@ -5,7 +5,7 @@ use std;
 use std::fmt;
 use std::io;
 use std::io::Read;
-use std::io::BufRead;
+use std::io::{BufRead, Write};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -255,6 +255,88 @@ impl Component for Stdin {
     }
     fn port_names(&self) -> PortNames {
         PortNames::new(&["clk"], &["EOF", "x7", "x6", "x5", "x4", "x3", "x2", "x1", "x0"])
+    }
+}
+#[derive(Clone)]
+pub struct RcWrite(pub Rc<Write>);
+
+// Manually implement debug because Rc<Write> does not implement it
+impl fmt::Debug for RcWrite {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("RcWrite")
+            .field("buf_rc_count", &Rc::strong_count(&self.0))
+            .finish()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Stdout {
+    last_clk: Bit,
+    // Hack: using Rc instead of Box because we need to Clone everything which
+    // implements the Component trait
+    buf: Option<RcWrite>,
+}
+
+impl Stdout {
+    pub fn new() -> Self {
+        Self { last_clk: Bit::X, buf: None }
+    }
+    pub fn with_bufwrite(r: Rc<Write>) -> Self {
+        let mut s = Self::new();
+        s.buf = Some(RcWrite(r));
+
+        s
+    }
+}
+
+impl Component for Stdout {
+    fn update(&mut self, input: &[Bit]) -> Vec<Bit> {
+        assert_eq!(input.len(), 9);
+        // On rising edge:
+        if self.last_clk == Bit::L && input[0] == Bit::H {
+            let mut buf = [Bit::bit8_into_u8(&input[1..]); 1];
+            if self.buf.is_none() {
+                let stdout = io::stdout();
+                let mut stdout = stdout.lock();
+                match stdout.write_all(&mut buf) {
+                    Ok(_) => {}
+                    Err(_) => {}
+                }
+            } else {
+                let stdout = &mut self.buf.as_mut().unwrap().0;
+                let mut stdout = Rc::get_mut(stdout);
+                if stdout.is_some() {
+                    match stdout.unwrap().write_all(&mut buf) {
+                        Ok(_) => {}
+                        Err(_) => {}
+                    }
+                } else {
+                    // The Rc has more than one owner, panic?
+                }
+            }
+        }
+
+        self.last_clk = input[0];
+
+        vec![]
+    }
+    fn needs_update(&self) -> bool {
+        false // We get new input on clk rising edge
+    }
+    fn num_inputs(&self) -> usize {
+        9
+    }
+    fn num_outputs(&self) -> usize {
+        0
+    }
+    fn name(&self) -> &str {
+        "Stdout"
+    }
+    fn box_clone(&self) -> Box<Component> {
+        Box::new((*self).clone())
+    }
+    fn port_names(&self) -> PortNames {
+        PortNames::new(&["clk", "x7", "x6", "x5", "x4", "x3", "x2", "x1", "x0"], &[])
     }
 }
 
