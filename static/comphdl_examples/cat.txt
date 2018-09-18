@@ -3,9 +3,12 @@ component Catv0(clk) -> eof {
     Stdout(clk, x[7:0]);
 }
 
-component Cat(enable) -> (eof) {
+component Cat(enable) -> (eof3) {
     Clk2(enable) -> clk;
     Stdin(clk) -> (eof, x[7:0]);
+    Buf(eof) -> eof1;
+    Buf(eof1) -> eof2;
+    Buf(eof2) -> eof3;
     Nand(eof) -> neof;
     Buf(clk) -> bclk1;
     Buf(bclk1) -> bclk;

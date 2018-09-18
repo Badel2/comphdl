@@ -142,37 +142,41 @@ fn simulate_ram16k(b: &mut Bencher) {
 }
 
 #[bench]
-fn cat(b: &mut Bencher) {
-    let input = format!("Hello, world!").into_bytes();
+fn simulate_cat(b: &mut Bencher) {
+    let input = format!("Hello, world! Hmmmmmm... 0123456789 ");
+    let input = format!("{}{}{}{}", input, input, input, input);
+    let input = format!("{}{}{}{}", input, input, input, input);
+    let input = input.into_bytes();
+    assert_eq!(input.len(), 576);
+    let cf = parser::parse_str(CAT);
+    println!("{:#?}", cf);
+    let mut cf = cf.unwrap();
     b.iter(|| {
+        let mut ticks = 0;
         let mut out = vec![];
-        let (s, handle) = {
-            let cf = parser::parse_str(CAT);
-            println!("{:#?}", cf);
-            let mut cf = cf.unwrap();
-            cf.set_stdin_vec(input.clone());
-            let handle = cf.set_stdout_vec(out);
-            let s = cf.create_named("Cat");
-            println!("{:#?}",s );
-            let s = s.unwrap();
-            (s, handle)
-        };
+
+        // We must recreate the component at each iteration because
+        // we need to reset the stdin and stdout buffers
+        cf.set_stdin_vec(input.clone());
+        let handle = cf.set_stdout_vec(out);
+        let s = cf.create_named("Cat");
+        //println!("{:#?}", s);
+        let s = s.unwrap();
         assert_eq!(s.num_inputs(), 1);
         assert_eq!(s.num_outputs(), 1);
         let mut s = s;
         // We read on rising edge, so first set to 0
         for _ in 0..1 {
             assert_eq!(s.update(&[Bit::L]), vec![Bit::X]);
+            ticks += 1;
         }
         let mut eof = Bit::L;
         while eof != Bit::H { // antipattern
             eof = s.update(&[Bit::H])[0];
-        }
-        // Wait for the last write...
-        for _ in 0..3 {
-            s.update(&[Bit::H]);
+            ticks += 1;
         }
         assert_eq!(&input, handle.borrow_mut().get_ref());
+        assert_eq!(ticks, input.len() * 2 + 1 + 3 + 3);
         s
     });
 }

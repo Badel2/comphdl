@@ -164,7 +164,7 @@ impl Component for ConstantBit {
 }
 
 #[derive(Clone)]
-pub struct RcBufRead(pub Rc<BufRead>);
+pub struct RcBufRead(pub Rc<RefCell<BufRead>>);
 
 // Manually implement debug because Rc<BufRead> does not implement it
 impl fmt::Debug for RcBufRead {
@@ -190,7 +190,7 @@ impl Stdin {
     pub fn new() -> Self {
         Self { last_clk: Bit::X, last_out: vec![Bit::X; 8], eof: Bit::X, buf: None }
     }
-    pub fn with_bufread(r: Rc<BufRead>) -> Self {
+    pub fn with_bufread(r: Rc<RefCell<BufRead>>) -> Self {
         let mut s = Self::new();
         s.buf = Some(RcBufRead(r));
 
@@ -216,10 +216,10 @@ impl Component for Stdin {
                     }
                 }
             } else {
-                let stdin = &mut self.buf.as_mut().unwrap().0;
-                let mut stdin = Rc::get_mut(stdin);
-                if stdin.is_some() {
-                    match stdin.unwrap().read_exact(&mut buf) {
+                let stdin = self.buf.as_ref().unwrap();
+                let stdin = stdin.0.try_borrow_mut();
+                if let Ok(mut stdin) = stdin {
+                    match stdin.read_exact(&mut buf) {
                         Ok(_) => self.last_out = Bit::from_u8(buf[0]),
                         Err(_) => {
                             self.last_out = vec![Bit::X; 8];

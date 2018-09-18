@@ -415,7 +415,7 @@ impl ComponentFactory {
             "Stdout" => {
                 assert_eq!(num_inputs, 9);
                 assert_eq!(num_outputs, 0);
-                if self.stdin_bufread.is_some() {
+                if self.stdout_bufwrite.is_some() {
                     Box::new(Stdout::with_bufwrite(self.stdout_bufwrite.as_ref().unwrap().0.clone()))
                 } else {
                     Box::new(Stdout::new())
@@ -424,11 +424,15 @@ impl ComponentFactory {
             _ => return None,
         })
     }
-    pub fn set_stdin_bufread(&mut self, r: Rc<BufRead>) {
+    pub fn set_stdin_bufread(&mut self, r: Rc<RefCell<BufRead>>) {
         self.stdin_bufread = Some(RcBufRead(r));
     }
-    pub fn set_stdin_vec(&mut self, v: Vec<u8>) {
-        self.stdin_bufread = Some(RcBufRead(Rc::new(Cursor::new(v))));
+    // Use the returned value to modify the input vector.
+    // println!("{:#?}", handle.borrow_mut().get_ref());
+    pub fn set_stdin_vec(&mut self, v: Vec<u8>) -> Rc<RefCell<Cursor<Vec<u8>>>> {
+        let handle = Rc::new(RefCell::new(Cursor::new(v)));
+        self.stdin_bufread = Some(RcBufRead(handle.clone()));
+        handle
     }
     pub fn set_stdout_bufwrite(&mut self, r: Rc<RefCell<Write>>) {
         self.stdout_bufwrite = Some(RcWrite(r));

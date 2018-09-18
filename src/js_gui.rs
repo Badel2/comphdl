@@ -85,29 +85,26 @@ pub fn run_js_gui() -> String {
     };
     let top = get_element_by_id_value("top_name");
 
-    let mut c = {
-        let mut cf = match parser::parse_str(&definition) {
-            Ok(cf) => cf,
-            Err(e) => {
-                return format!("Error parsing source code: {}", e);
-            }
-        };
+    let mut cf = match parser::parse_str(&definition) {
+        Ok(cf) => cf,
+        Err(e) => {
+            return format!("Error parsing source code: {}", e);
+        }
+    };
 
-        let stdin_bufread = get_element_by_id_value("stdin_bufread");
-        cf.set_stdin_vec(stdin_bufread.into_bytes());
-        cf.set_stdout_bufwrite(Rc::new(RefCell::new(ValueWriter::new("stdout_bufwrite".into()))));
+    let stdin_bufread = get_element_by_id_value("stdin_bufread");
+    cf.set_stdin_vec(stdin_bufread.into_bytes());
+    cf.set_stdout_bufwrite(Rc::new(RefCell::new(ValueWriter::new("stdout_bufwrite".into()))));
 
-        let mut c = match cf.create_named(&top) {
-            Some(c) => c,
-            None => {
-                if top == "" {
-                    return format!("You must specify a top component name");
-                }
-                return format!("Top component `{}` not found", top);
-                // TODO: did you mean ...? (find components with similar names)
+    let mut c = match cf.create_named(&top) {
+        Some(c) => c,
+        None => {
+            if top == "" {
+                return format!("You must specify a top component name");
             }
-        };
-        c
+            return format!("Top component `{}` not found", top);
+            // TODO: did you mean ...? (find components with similar names)
+        }
     };
 
     // Borrow the component as a structural to generate the netlist

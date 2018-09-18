@@ -19,6 +19,7 @@ use comphdl::{emit_json, parser};
 use std::io::{BufReader, Read, Write};
 use std::fs::File;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 fn yosys_netlist(c: &Component) {
     // We can only generate netlists from structural, not from component
@@ -33,13 +34,10 @@ pub fn parse_file(filename: &str, top: &str) {
     let mut bs = String::new();
     buf_reader.read_to_string(&mut bs).unwrap();
 
-    let mux = {
-        let mut cf = parser::parse_str(&bs).unwrap();
-        let stdin_bufread = File::open("stdin.txt").expect("Unable to open file");
-        cf.set_stdin_bufread(Rc::new(BufReader::new(stdin_bufread)));
-        let mux = cf.create_named(top).unwrap();
-        mux
-    };
+    let mut cf = parser::parse_str(&bs).unwrap();
+    let stdin_bufread = File::open("stdin.txt").expect("Unable to open file");
+    cf.set_stdin_bufread(Rc::new(RefCell::new(BufReader::new(stdin_bufread))));
+    let mux = cf.create_named(top).unwrap();
     println!("{:#?}", mux);
 
     let mut gate = mux;
