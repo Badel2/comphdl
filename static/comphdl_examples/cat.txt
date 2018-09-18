@@ -1,0 +1,44 @@
+component Catv0(clk) -> eof {
+    Stdin(clk) -> (eof, x[7:0]);
+    Stdout(clk, x[7:0]);
+}
+
+component Cat(enable) -> (eof) {
+    Clk2(enable) -> clk;
+    Stdin(clk) -> (eof, x[7:0]);
+    Nand(eof) -> neof;
+    Buf(clk) -> bclk1;
+    Buf(bclk1) -> bclk;
+    Nand(neof, bclk) -> nclk2;
+    Nand(nclk2) -> clk2;
+    Bufw8(x[7:0]) -> x1[7:0];
+    Bufw8(x1[7:0]) -> x2[7:0];
+    Bufw8(x2[7:0]) -> x3[7:0];
+    Stdout(clk2, x3[7:0]);
+}
+
+component Buf(a) -> x {
+    a = x;
+}
+
+component Bufw8(a[7:0]) -> x[7:0] {
+    Buf(a[0]) -> x[0];
+    Buf(a[1]) -> x[1];
+    Buf(a[2]) -> x[2];
+    Buf(a[3]) -> x[3];
+    Buf(a[4]) -> x[4];
+    Buf(a[5]) -> x[5];
+    Buf(a[6]) -> x[6];
+    Buf(a[7]) -> x[7];
+}
+
+component Clk4(a) -> x1 {
+    Nand(a, x3) -> x;
+    Nand(x) -> x1;
+    Nand(x1) -> x2;
+    Buf(x2) -> x3;
+}
+
+component Clk2(a) -> x {
+    Nand(a, x) -> x;
+}

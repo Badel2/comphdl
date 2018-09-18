@@ -434,6 +434,7 @@ impl ComponentFactory {
         self.stdout_bufwrite = Some(RcWrite(r));
     }
     // Use the returned value to read the data written to the vector
+    // println!("{:#?}", handle.borrow_mut().get_ref());
     pub fn set_stdout_vec(&mut self, v: Vec<u8>) -> Rc<RefCell<Cursor<Vec<u8>>>> {
         let handle = Rc::new(RefCell::new(Cursor::new(v)));
         self.stdout_bufwrite = Some(RcWrite(handle.clone()));
@@ -648,4 +649,37 @@ component ArrayTest1D(a[3:0]) -> b[3:0] {
     assert_eq!(s.num_inputs(), 4);
     assert_eq!(s.num_outputs(), 4);
 }
-
+#[test]
+fn cat() {
+    use bit::Bit;
+    // This could be a nice bench
+    let d = include_str!("../static/comphdl_examples/cat.txt");
+    let input = format!("Hello, world!").into_bytes();
+    let mut out = vec![];
+    let (s, handle) = {
+        let cf = parse_str(d);
+        println!("{:#?}", cf);
+        let mut cf = cf.unwrap();
+        cf.set_stdin_vec(input.clone());
+        let handle = cf.set_stdout_vec(out);
+        let s = cf.create_named("Cat");
+        println!("{:#?}",s );
+        let s = s.unwrap();
+        (s, handle)
+    };
+    assert_eq!(s.num_inputs(), 1);
+    assert_eq!(s.num_outputs(), 1);
+    let mut s = s;
+    for _ in 0..10 {
+        assert_eq!(s.update(&[Bit::L]), vec![Bit::X]);
+    }
+    let mut eof = Bit::L;
+    while eof != Bit::H { // antipattern
+        eof = s.update(&[Bit::H])[0];
+    }
+    // Wait for the last write...
+    for _ in 0..3 {
+        s.update(&[Bit::H]);
+    }
+    assert_eq!(&input, handle.borrow_mut().get_ref());
+}
