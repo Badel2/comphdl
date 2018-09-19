@@ -8,9 +8,9 @@ after_success: |
   [ $TRAVIS_PULL_REQUEST = false ] &&
   [ $TRAVIS_RUST_VERSION = nightly ] &&
   git branch -a &&
-  git fetch https://github.com/${TRAVIS_REPO_SLUG}.git gh-pages &&
+  ./create_all_branches.sh &&
   git branch -a &&
-  git checkout -t origin/gh-pages &&
+  git checkout gh-pages &&
   git pull origin master &&
   cargo install cargo-web &&
   ./build_demo.sh &&
