@@ -34,8 +34,10 @@ pub fn parse_file(filename: &str, top: &str) {
     buf_reader.read_to_string(&mut bs).unwrap();
 
     let mut cf = parser::parse_str(&bs).unwrap();
-    let stdin_bufread = File::open("stdin.txt").expect("Unable to open file");
-    cf.set_stdin_bufread(Rc::new(RefCell::new(BufReader::new(stdin_bufread))));
+    // If file stdin.txt exists, read input from there instead of stdin
+    if let Ok(stdin_bufread) = File::open("stdin.txt") {
+        cf.set_stdin_bufread(Rc::new(RefCell::new(BufReader::new(stdin_bufread))));
+    }
     let mux = cf.create_named(top).unwrap();
     println!("{:#?}", mux);
 
