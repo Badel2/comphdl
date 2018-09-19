@@ -1,6 +1,8 @@
 extern crate lalrpop;
 
 fn main() {
-    lalrpop::process_root().unwrap();
+    lalrpop::Configuration::new()
+        .process_file("src/comphdl1.lalrpop")
+        .unwrap();
     println!("cargo:rerun-if-changed=src/comphdl1.lalrpop");
 }
