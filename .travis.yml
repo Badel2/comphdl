@@ -3,6 +3,16 @@ rust:
 - stable
 - beta
 - nightly
+after_success: |
+  [ $TRAVIS_BRANCH = master ] &&
+  [ $TRAVIS_PULL_REQUEST = false ] &&
+  [ $TRAVIS_RUST_VERSION = nightly ] &&
+  cargo install cargo-web &&
+  git checkout gh-pages &&
+  git pull origin master &&
+  ./build_demo.sh &&
+  git add demo/nightly &&
+  git push https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
 env:
   global:
-secure: C02vWasjMAZWBh24DxzirJq22iwFyDNT/8iOOp2IJt0wMythQJ/+El7WYCh8Ybo9OppsfEq8O3GR5aUXmf+UIjc05hQChoHFNx7Qpj1c8d8si5yXzHroc6jS5jWoHZtNY44G1D5xoahfJjVOK9gxZMn6mxjF9nGYI4KR5pdGR4j+TY3rMijFc9DUM9mLZgPWUDY/HSar5kDgypV8mEbKsiNcSliLdkNP4bRLijYFVBnJkOucGJV/8aLrAuOcT44j5ynpOaFfjT+JbUNhU/M8dnriQ4BNBGol2iOovFpe6MQsgdyr/uiHiuOsP2FVnmvaLFAyRvI/VXsweAv1KAMI6aANXhcXKKMjfaJUjeYHRTNpO2AcH23A2lZ76TuLs+X//D2oL6zIUwm0lLGuGN2Kk0I13cUGNJ0PsPSw33sLLx8OEqrJ9yA5Woo/n30XjCcwT6SBKUSO8crbUBAatZ1+wCehpfwS1qgsvMlxWIumDL7B/kye5spkzM4iaRLhsQne8F4D4N06q6ZGuysmquezf2aSoyqdM2IO9G9CzETO6hLcMeHaTvlbnbz5fBUTseliXltTQEG64BB4XnrSDcQBWWLUHNEbFGjkTxQUzTnSbQQ7BqLOeNyq09rqN0imNHY8zFsKyHArXF9iGZTZN1CTzVsJqRw7p56f1e5hlN0i9e8=
+    secure: x8TKY+3f/hRfei6whkl8iQg1nBLN/JYtdeubSBv6VgsdyzjVVqIkqQSvMZsjMwERllnrzjZIkx3qUKVMR/Mo/gWLuKZiCk62/TPtoCztfd44t0Ux3jLdl9sGuftOuW6l+Jn9f9VY3e37fMuUVloYGBOTW436U1gqF4TAgDvEm7blUtqjmmQc8LLma4Hb9Zl5P5UMrV8ijpiAycMIlSlTHgUHUzekPCo/lZjOslz5H8/xRrN3f2K9Kwg8WIvzv1gmHexo1juZNBiyJd5rwZDAAQDfsFYjydwi7rJkQnuaQpPfLqmKJO5oP1cu4SUmuxjIZzup8K0Lgfjv0mHY4TrgWngqwaSpj2TDkyK8HV9j4dpsq+vJeod+6qw5QNWIkGp2oWoR50HHEBOY4yGsp5xn0QKxPvZ4OiK0O1vl7tQ6c98XCu2/N4kpUCFM6fbFyZZW/w5eOfoyUle7jmdGrELecqcCWZGJpmxbBJnJ3vXiShKnW7BShlCFUpPx1h9Wkqh5XSylpSX90+1VlP1y9stOVbfsIilDNdIS9qc5TbHKa0dL5ZX5dNJMgZV+K6T94WSvf+9IIXxGA6DUhSF9qR7ihBedkL/5Mvc22PwbRnukD3MB5MwHdUtf9SqkS9RgeRr5EcaJ3v1IzQte4cOLe9Kx4VHbSWRrt96jMCclrOAsn3k=
