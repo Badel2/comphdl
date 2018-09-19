@@ -7,16 +7,15 @@ after_success: |
   [ $TRAVIS_BRANCH = master ] &&
   [ $TRAVIS_PULL_REQUEST = false ] &&
   [ $TRAVIS_RUST_VERSION = nightly ] &&
-  git branch -a &&
   ./create_all_branches.sh &&
-  git branch -a &&
   git checkout gh-pages &&
   git pull origin master &&
   cargo install cargo-web &&
   ./build_demo.sh &&
   git add demo/nightly &&
   git commit -m 'Nighlty demo' &&
-  git push https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+  # We must somehow preserve the demo/v07 folder...
+  git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
 env:
   global:
     secure: x8TKY+3f/hRfei6whkl8iQg1nBLN/JYtdeubSBv6VgsdyzjVVqIkqQSvMZsjMwERllnrzjZIkx3qUKVMR/Mo/gWLuKZiCk62/TPtoCztfd44t0Ux3jLdl9sGuftOuW6l+Jn9f9VY3e37fMuUVloYGBOTW436U1gqF4TAgDvEm7blUtqjmmQc8LLma4Hb9Zl5P5UMrV8ijpiAycMIlSlTHgUHUzekPCo/lZjOslz5H8/xRrN3f2K9Kwg8WIvzv1gmHexo1juZNBiyJd5rwZDAAQDfsFYjydwi7rJkQnuaQpPfLqmKJO5oP1cu4SUmuxjIZzup8K0Lgfjv0mHY4TrgWngqwaSpj2TDkyK8HV9j4dpsq+vJeod+6qw5QNWIkGp2oWoR50HHEBOY4yGsp5xn0QKxPvZ4OiK0O1vl7tQ6c98XCu2/N4kpUCFM6fbFyZZW/w5eOfoyUle7jmdGrELecqcCWZGJpmxbBJnJ3vXiShKnW7BShlCFUpPx1h9Wkqh5XSylpSX90+1VlP1y9stOVbfsIilDNdIS9qc5TbHKa0dL5ZX5dNJMgZV+K6T94WSvf+9IIXxGA6DUhSF9qR7ihBedkL/5Mvc22PwbRnukD3MB5MwHdUtf9SqkS9RgeRr5EcaJ3v1IzQte4cOLe9Kx4VHbSWRrt96jMCclrOAsn3k=
