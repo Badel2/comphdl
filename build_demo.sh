@@ -2,6 +2,7 @@
 #git checkout gh-pages
 #git pull origin master
 cd netlistsvg
+npm install
 npm run build-badel
 cd ..
 cargo +nightly web deploy --features stdweb
