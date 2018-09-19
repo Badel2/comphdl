@@ -24,4 +24,4 @@ function create_all_branches()
     git checkout ${build_head}
 }
 
-create_all_branches()
+create_all_branches
