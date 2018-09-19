@@ -3,11 +3,13 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate vcd;
+#[macro_use]
+extern crate lalrpop_util;
 
 pub mod emit_json;
 pub mod parser;
 pub mod bit;
 pub mod component;
 pub mod simulation;
-pub mod comphdl1;
+lalrpop_mod!(pub comphdl1);
 
