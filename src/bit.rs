@@ -142,7 +142,7 @@ fn inf_equals_rep_2() {
 #[test]
 fn bit_u8_conversion() {
     // There are only 256 possible u8 values, test them all
-    for x in 0..=256 {
+    for x in 0..=255 {
         assert_eq!(x, Bit::bit8_into_u8(&Bit::from_u8(x)));
     }
     // And the bit order is [7:0], check that as well

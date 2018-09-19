@@ -204,7 +204,7 @@ impl CompDefinition {
 
         // Verify that arrays have unique names: (a, a[3:0]) should fail
         let mut array_names = HashMap::new();
-        for (s, con) in &signals {
+        for (s, _con) in &signals {
             let parts: Vec<_> = s.split("$").collect();
             if parts.len() > 1 {
                 assert!(parts.len() == 2);
@@ -236,7 +236,7 @@ impl CompDefinition {
 
         println!("ARRAY NAMES: {:?}", array_names);
 
-        for (name, dimension) in array_names {
+        for (name, _dimension) in array_names {
             if let Some(_) = signals.get(&name.to_string()) {
                 return Err(format!("Signal `{}` is used as an array, but also as a bit", name));
             }
@@ -659,7 +659,7 @@ fn cat() {
     // This could be a nice bench
     let d = include_str!("../static/comphdl_examples/cat.txt");
     let input = format!("Hello, world!").into_bytes();
-    let mut out = vec![];
+    let out = vec![];
     let (s, handle) = {
         let cf = parse_str(d);
         println!("{:#?}", cf);

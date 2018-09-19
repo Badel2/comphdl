@@ -153,7 +153,7 @@ fn simulate_cat(b: &mut Bencher) {
     let mut cf = cf.unwrap();
     b.iter(|| {
         let mut ticks = 0;
-        let mut out = vec![];
+        let out = vec![];
 
         // We must recreate the component at each iteration because
         // we need to reset the stdin and stdout buffers

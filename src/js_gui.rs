@@ -8,7 +8,7 @@ use stdweb::web::IParentNode;
 use stdweb::unstable::TryInto;
 use std::rc::Rc;
 use std::cell::RefCell;
-use std::io::{self, BufReader, Cursor, Write};
+use std::io::{self, Write};
 
 fn get_element_by_id_value(id: &str) -> String {
     let checked_raw = js! {
