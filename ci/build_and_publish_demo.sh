@@ -10,6 +10,6 @@ git pull origin master &&
 ci/install_cargo_web.sh &&
 ci/build_demo.sh &&
 git add demo/nightly &&
-git commit -m 'Nighlty demo' &&
+git commit -qm 'Nighlty demo' &&
 # We must somehow preserve the demo/v07 folder...
 git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
