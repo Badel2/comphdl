@@ -208,6 +208,7 @@ function toggleFloatingControls() {
     } else {
         a.style.position = 'absolute';
         a.style.width = '500px';
+        a.style.zIndex = '10';
     }
 }
 
