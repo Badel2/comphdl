@@ -74,7 +74,15 @@ function register_main_loop(main_loop) {
             }
         }
 
-        intervalId = setInterval(demo, 1000/30);
+        var target_tps = 30;
+        if (target_ticks_per_second) {
+            var x = Number.parseFloat(target_ticks_per_second.value);
+            if (x) {
+                target_tps = x;
+            }
+        }
+        console.log('setInterval to ' + target_tps);
+        intervalId = setInterval(demo, 1000/target_tps);
 }
 
 function loadExampleSelect() {

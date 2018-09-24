@@ -80,8 +80,10 @@
                 <small id="draggableControlsheader" style="background-color: #55a;">Make this floating and move it:</small>
                 <button onClick="toggleFloatingControls()">TOGGLE FLOATING</button>
                   <div>
-                    <input type="text" id="tick_display">
-                    <input type="text" id="target_ticks_per_second">
+                    Tick:
+                    <input type="text" id="tick_display" size="7">
+                    Ticks per second:
+                    <input type="text" id="target_ticks_per_second" size="4" value="30">
                     <input type="checkbox" id="check_run_step"> running step
                     <input type="checkbox" id="check_run_forever"> running forever
                     <input type="checkbox" id="check_alive"> rust alive
