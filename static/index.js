@@ -140,6 +140,7 @@ function runGui() {
         if (alive.checked) {
             // TODO: kill it
             alert("Stop the program before running it again");
+            showSimulationControls();
             // We cannot kill it here because the Rust code will not update
             // and we get a classical race condition.
             // This could maybe be fixed by giving each Rust instance its own
