@@ -3,6 +3,10 @@ stats.showPanel( 0 );
 stats.dom.style.cssText = '';
 document.getElementById('statsDiv').appendChild( stats.dom );
 
+function refreshWaveDrom() {
+    WaveDrom.EditorRefresh();
+}
+
 Rust.comphdl.then(function(comphdl) {
     document.getElementById("loading_wasm").style.display = "none";
     document.getElementById("loaded_wasm").style.display = "block";
@@ -61,6 +65,7 @@ function register_main_loop(main_loop) {
                 stats.begin();
                 main_loop(check_show_debug.checked, check_show_signals.checked);
                 stats.end();
+                refreshWaveDrom();
                 check_run_step.checked = false;
                 tick += 1;
                 tick_display.value = tick;
