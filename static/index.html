@@ -105,6 +105,7 @@
             </div>
         </div>
         <div class="div-3">
+            <div id="statsDiv"></div>
             DEBUG OUTPUT:
             <textarea id="top_output_debug" style="height:400px; width:95%" placeholder="Simulation output" readonly></textarea>
             NETLIST JSON:
@@ -135,6 +136,7 @@
             editor.setTheme("ace/theme/tomorrow");
             editor.session.setMode("ace/mode/rust");
         </script>
+        <script src="stats.min.js"></script>
         <script src="comphdl.js"></script>
         <script src="elk.bundled.js"></script>
         <script src="netlistsvg.js"></script>
