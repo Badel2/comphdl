@@ -7,6 +7,7 @@ extern crate vcd;
 extern crate lalrpop_util;
 
 pub mod emit_json;
+pub mod wave_json;
 pub mod parser;
 pub mod bit;
 pub mod component;

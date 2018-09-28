@@ -2,9 +2,13 @@ var stats = new Stats();
 stats.showPanel( 0 );
 stats.dom.style.cssText = '';
 document.getElementById('statsDiv').appendChild( stats.dom );
+// Force this checkbox to false because otherwise we wont be able to press RUN
+document.getElementById("check_alive").checked = false;
 
 function refreshWaveDrom() {
     WaveDrom.EditorRefresh();
+    var t = document.getElementById('SVG');
+    t.scrollLeft = t.scrollWidth;
 }
 
 Rust.comphdl.then(function(comphdl) {
@@ -56,6 +60,8 @@ function register_main_loop(main_loop) {
         var tick_display = document.getElementById("tick_display");
         var check_show_debug = document.getElementById("check_show_debug");
         var check_show_signals = document.getElementById("check_show_signals");
+        var check_render_wavedrom = document.getElementById("check_render_wavedrom");
+        var check_monitor_signals = document.getElementById("check_monitor_signals");
         var target_ticks_per_second = document.getElementById("target_ticks_per_second");
         var tick = 0;
         var intervalId;
@@ -63,9 +69,11 @@ function register_main_loop(main_loop) {
         function demo() {
             if(check_run_forever.checked || check_run_step.checked) {
                 stats.begin();
-                main_loop(check_show_debug.checked, check_show_signals.checked);
+                main_loop(check_show_debug.checked, check_show_signals.checked, check_monitor_signals.checked);
                 stats.end();
-                refreshWaveDrom();
+                if(check_render_wavedrom.checked) {
+                    refreshWaveDrom();
+                }
                 check_run_step.checked = false;
                 tick += 1;
                 tick_display.value = tick;

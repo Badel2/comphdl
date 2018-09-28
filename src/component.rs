@@ -453,7 +453,10 @@ impl Structural {
             self.propagate(0);
         }
     }
-    fn output(&self) -> Vec<Bit> {
+    pub fn input(&self) -> Vec<Bit> {
+        self.components[0].output.clone()
+    }
+    pub fn output(&self) -> Vec<Bit> {
         self.components[0].input.clone()
     }
     fn update_components(&mut self) {

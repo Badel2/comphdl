@@ -1,6 +1,7 @@
 use comphdl::{emit_json, parser};
-use comphdl::component::ComponentIndex;
+use comphdl::component::{ComponentIndex, Structural};
 use comphdl::bit::Bit;
+use comphdl::wave_json::{WaveJson};
 use stdweb::js_export;
 use stdweb::web::html_element::TextAreaElement;
 use stdweb::web::document;
@@ -108,12 +109,14 @@ pub fn run_js_gui() -> String {
     };
 
     // Borrow the component as a structural to generate the netlist
-    let (s, yosys_addr) = {
+    let (s, yosys_addr, mut wave_json) = {
         let cs = c.as_structural().unwrap();
         let s = emit_json::from_structural(&cs).unwrap();
         let yosys_addr = emit_json::yosys_addr_map(&cs);
+        let mut wave_json = WaveJson::from_structural(cs);
+        wave_json.set_buffer_len(50);
 
-        (s, yosys_addr)
+        (s, yosys_addr, wave_json)
     };
     console!(log, "Ok1");
 
@@ -248,11 +251,21 @@ pub fn run_js_gui() -> String {
         }
     };
 
+    let mut set_wave_json = move |c: &Structural| {
+        // WaveJSON for WaveDrom
+        wave_json.update(c);
+        let s = wave_json.to_json().unwrap();
+        js! {
+            var txt = document.getElementById("InputJSON_0");
+            txt.value = @{s};
+        }
+    };
+
     let counter: TextAreaElement = document().query_selector( "#top_output_debug" ).unwrap().unwrap().try_into().unwrap();
 
     let mut old_output = None;
     let mut old_internal = None;
-    let main_loop = move |show_debug: bool, show_signals: bool| {
+    let main_loop = move |show_debug: bool, show_signals: bool, monitor_signals: bool| {
         let input = get_checkbox_inputs();
         let output = c.update(&input);
 
@@ -264,6 +277,12 @@ pub fn run_js_gui() -> String {
             //if old_internal.is_none() || old_internal.as_ref().unwrap() != &internal {
             if old_internal.as_ref().map_or(true, |o| o != &internal) {
                 set_style_output_and_signals(&internal);
+            }
+            if monitor_signals {
+                set_wave_json(c.as_structural().unwrap());
+            } else {
+                // Erasing the wave json is not supported yet
+                // Remember to update tick
             }
             old_internal = Some(internal);
         }
