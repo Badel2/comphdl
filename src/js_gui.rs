@@ -78,6 +78,7 @@ impl BufRead for ValueReader {
 
 struct ValueWriter {
     id: String,
+    buf: Vec<u8>,
 }
 
 impl ValueWriter {
@@ -88,14 +89,54 @@ impl ValueWriter {
                 t.value = "";
             }
         }
-        Self { id }
+        Self { id, buf: vec![] }
     }
 }
 
 impl Write for ValueWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let id = &self.id;
-        let bufstring: String = String::from_utf8_lossy(buf).into();
+        // We always return the buf len, meaning that the entire buffer was
+        // written. This may not be true, as this writter has a small internal
+        // buffer for dealing with incomplete UTF8 characters.
+        let buf_len = buf.len();
+        // If the last few bytes of the buffer cannot be converted to a string,
+        // it may be because it's an incomplete unicode character.
+        // In that case, we save that bytes in a buffer and wait for further
+        // input.
+        let buf = if self.buf.is_empty() {
+            buf.to_vec()
+        } else {
+            let mut b = self.buf.clone();
+            b.extend(buf);
+            self.buf.clear();
+            b
+        };
+        // Now buf is [self.buf + buf]
+        let utf8_s = String::from_utf8(buf);
+        let bufstring = match utf8_s {
+            Ok(s) => s,
+            Err(err) => {
+                let e = err.utf8_error();
+                let buf = err.into_bytes();
+                match e.error_len() {
+                    // The string is valid until the end, so the last character
+                    // is incomplete and will be written in the next call
+                    None => {
+                        let i = e.valid_up_to();
+                        // Save last bytes
+                        self.buf = buf[i..].to_vec();
+                        String::from_utf8(buf[..i].to_vec()).unwrap()
+                    }
+                    // An invalid character in the middle of the stream, we
+                    // just fallback to from_utf8_lossy
+                    Some(_) => {
+                        String::from_utf8_lossy(&buf).into()
+                    }
+                }
+            }
+        };
+        //let bufstring: String = String::from_utf8_lossy(buf).into();
         js! {
             var t = document.getElementById(@{id});
             if(t != null) {
@@ -111,10 +152,12 @@ impl Write for ValueWriter {
         }
 
         // We can't fail
-        Ok(buf.len())
+        Ok(buf_len)
     }
     fn flush(&mut self) -> io::Result<()> {
-        // We always flush anyway
+        // TODO: should we write self.buf here?
+        // Note that self.buf is invalid unicode, so it will be printed as
+        // garbage.
         Ok(())
     }
 }
