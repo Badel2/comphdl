@@ -9,7 +9,8 @@ use stdweb::web::IParentNode;
 use stdweb::unstable::TryInto;
 use std::rc::Rc;
 use std::cell::RefCell;
-use std::io::{self, Write};
+use std::io::{self, BufRead, Cursor, Read, Write};
+use std::cmp;
 
 fn get_element_by_id_value(id: &str) -> String {
     let checked_raw = js! {
@@ -30,6 +31,48 @@ fn get_element_by_id_value(id: &str) -> String {
 
             format!("")
         }
+    }
+}
+
+struct ValueReader {
+    id: String,
+    buf: Cursor<Vec<u8>>,
+}
+
+impl ValueReader {
+    fn new(id: String) -> Self {
+        js! {
+            var t = document.getElementById(@{&id});
+            if(t != null) {
+                t.value = "";
+            }
+        }
+        Self { id, buf: Cursor::new(Vec::new()) }
+    }
+}
+
+impl Read for ValueReader {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.fill_buf()?;
+        self.buf.read(buf)
+    }
+}
+
+impl BufRead for ValueReader {
+    fn fill_buf(&mut self) -> io::Result<&[u8]> {
+        let s = get_element_by_id_value(&self.id);
+        let old_pos = self.buf.position();
+        self.buf = Cursor::new(s.as_bytes().to_vec());
+        if old_pos <= self.buf.get_ref().len() as u64 {
+            // panic?
+        }
+        self.buf.set_position(old_pos);
+        let amt = cmp::min(old_pos, self.buf.get_ref().len() as u64);
+        Ok(&self.buf.get_ref()[(amt as usize)..])
+    }
+    fn consume(&mut self, n: usize) {
+        let old_pos = self.buf.position();
+        self.buf.set_position(old_pos + n as u64);
     }
 }
 
@@ -56,10 +99,15 @@ impl Write for ValueWriter {
         js! {
             var t = document.getElementById(@{id});
             if(t != null) {
-                t.value += @{bufstring};
+                t.value += @{&bufstring};
                 // Scroll to bottom
                 t.scrollTop = t.scrollHeight;
             }
+        }
+        // Fix newlines...
+        let bufstring = bufstring.replace("\n", "\n\r");
+        js! {
+            term.write(@{bufstring});
         }
 
         // We can't fail
@@ -93,8 +141,9 @@ pub fn run_js_gui() -> String {
         }
     };
 
-    let stdin_bufread = get_element_by_id_value("stdin_bufread");
-    cf.set_stdin_vec(stdin_bufread.into_bytes());
+    //let stdin_bufread = get_element_by_id_value("stdin_bufread");
+    //cf.set_stdin_vec(stdin_bufread.into_bytes());
+    cf.set_stdin_bufread(Rc::new(RefCell::new(ValueReader::new("stdin_bufread".into()))));
     cf.set_stdout_bufwrite(Rc::new(RefCell::new(ValueWriter::new("stdout_bufwrite".into()))));
 
     let mut c = match cf.create_named(&top) {

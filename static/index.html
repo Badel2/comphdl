@@ -50,6 +50,7 @@
             }
         </style>
         <style id="wire_style"></style>
+        <link rel="stylesheet" href="xtermjs/xterm.css" />
     </head>
     <body>
         <div id="loading_wasm" style="display: block; color: #F00;">
@@ -133,6 +134,7 @@
             <div id='TXT'><textarea id="InputJSON_0"></textarea></div>
             <button id="refresh_wavedrom" onClick="refreshWaveDrom()">RENDER</button>
             <div id='SVG' style="overflow:scroll;"><div id="WaveDrom_Display_0"></div></div>
+            <div id="terminal"></div>
             <div id="viewerContainer">
                 <svg id="svgArea">
                 </svg>
@@ -151,6 +153,14 @@
         <script src="netlistsvg.js"></script>
         <script src="http://wavedrom.com/skins/narrow.js" type="text/javascript"></script>
         <script src="http://wavedrom.com/wavedrom.min.js" type="text/javascript"></script>
+        <script src="xtermjs/xterm.js"></script>
+        <script>
+        var term = new Terminal();
+        term.open(document.getElementById('terminal'));
+        term.on('data', (data) => {
+          document.getElementById('stdin_bufread').value += data;
+        })
+        </script>
         <script src="index.js"></script>
     </body>
 </html>
