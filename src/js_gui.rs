@@ -41,12 +41,6 @@ struct ValueReader {
 
 impl ValueReader {
     fn new(id: String) -> Self {
-        js! {
-            var t = document.getElementById(@{&id});
-            if(t != null) {
-                t.value = "";
-            }
-        }
         Self { id, buf: Cursor::new(Vec::new()) }
     }
 }
