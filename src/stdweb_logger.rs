@@ -13,6 +13,7 @@
 use log::{self, Log, LevelFilter, Level, Record, SetLoggerError, Metadata};
 use ansi_term::{Color, Style};
 use std::fmt::Write;
+use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::fmt;
 
 // This struct is from the pretty_env_logger crate
@@ -30,6 +31,8 @@ impl fmt::Display for ColorLevel {
         }.fmt(f)
     }
 }
+
+static MAX_MODULE_WIDTH: AtomicUsize = ATOMIC_USIZE_INIT;
 
 pub struct Logger {
     filter: LevelFilter,
@@ -65,10 +68,14 @@ impl Log for Logger {
         if !self.enabled(record.metadata()) {
             return;
         }
-        let max_width = 80;
-        let target = record.target();
 
         // This formatting is from the pretty_env_logger crate
+        let target = record.target();
+        let mut max_width = MAX_MODULE_WIDTH.load(Ordering::Relaxed);
+        if max_width < target.len() {
+            MAX_MODULE_WIDTH.store(target.len(), Ordering::Relaxed);
+            max_width = target.len();
+        }
         let mut message = String::new();
         write!(&mut message, " {} {} > {}",
                ColorLevel(record.level()),
