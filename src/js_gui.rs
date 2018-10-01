@@ -158,6 +158,7 @@ impl Write for ValueWriter {
 
 #[js_export]
 pub fn run_js_gui() -> String {
+    debug!("Hello from Rust!");
     // TODO: check if already running
     let definition_raw = js! {
         return editor.getValue();
@@ -178,6 +179,7 @@ pub fn run_js_gui() -> String {
         }
     };
 
+    debug!("Creating component {}...", top);
     //let stdin_bufread = get_element_by_id_value("stdin_bufread");
     //cf.set_stdin_vec(stdin_bufread.into_bytes());
     cf.set_stdin_bufread(Rc::new(RefCell::new(ValueReader::new("stdin_bufread".into()))));
@@ -194,6 +196,7 @@ pub fn run_js_gui() -> String {
         }
     };
 
+    debug!("Generating netlist and wavejson...");
     // Borrow the component as a structural to generate the netlist
     let (s, yosys_addr, mut wave_json) = {
         let cs = c.as_structural().unwrap();
@@ -204,8 +207,8 @@ pub fn run_js_gui() -> String {
 
         (s, yosys_addr, wave_json)
     };
-    console!(log, "Ok1");
 
+    debug!("Writing netlist to textarea...");
     let comphdl_json: TextAreaElement = document().query_selector( "#comphdl_json" ).unwrap().unwrap().try_into().unwrap();
     comphdl_json.set_value(&s);
 
@@ -214,7 +217,7 @@ pub fn run_js_gui() -> String {
     let pn = c.port_names();
     
     // Create checkboxes for input and output
-    console!(log, "Ok2");
+    debug!("Creating checkboxes for input and output...");
     let mut input_div_inner_html = String::new();
     for i in 0..num_inputs {
         let name = &pn.input[i];
@@ -225,7 +228,6 @@ pub fn run_js_gui() -> String {
         input_div_inner_html.push_str(&inner_html);
     }
 
-    console!(log, "Ok3");
     let mut output_div_inner_html = String::new();
     for i in 0..num_outputs {
         let name = &pn.output[i];
@@ -236,7 +238,6 @@ pub fn run_js_gui() -> String {
         output_div_inner_html.push_str(&inner_html);
     }
 
-    console!(log, "Ok4");
     js! {
         var input_div = document.getElementById("top_input");
         input_div.innerHTML = @{input_div_inner_html};
@@ -244,7 +245,6 @@ pub fn run_js_gui() -> String {
         output_div.innerHTML = @{output_div_inner_html};
     }
 
-    console!(log, "Ok5");
 
     let inputnames = pn.input.clone();
     let outputnames = pn.output.clone();
@@ -381,6 +381,7 @@ pub fn run_js_gui() -> String {
         old_output = Some(output);
     };
 
+    info!("Rust code run successfully. Setting main loop from js.");
     js! {
         var main_loop = @{main_loop};
         register_main_loop(main_loop);
