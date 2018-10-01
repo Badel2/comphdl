@@ -105,8 +105,14 @@
                 </div>
             </div>
             <div>
-              <div id="comphdl_definition" style="height:500px; margin-right: 8px;"></div>
+              <div id="comphdl_definition" style="height:500px; margin-right: 8px; margin-bottom: 16px; margin-top: 8px;"></div>
             </div>
+            TABS:
+            <button onClick="terminalTab(0)">HIDE TERMINAL</button>
+            <button onClick="terminalTab(1)">COMPONENT STDOUT</button>
+            <button onClick="terminalTab(2)">DEBUG LOGS</button>
+            <div id="terminal_1" style="margin-right: 8px;"></div>
+            <div id="terminal_2" style="margin-right: 8px;"></div>
         </div>
         <div class="div-3">
             <div id="statsDiv"></div>
@@ -128,13 +134,12 @@
             <textarea id="stdin_bufread" style="height:100px; width:95%" placeholder="Stdin input"></textarea>
             STDOUT:
             <textarea id="stdout_bufwrite" style="height:100px; width:95%" placeholder="Characters written to stdout will appear here" readonly></textarea>
-        </div>
-        <div id="bottomDiv" class="div-2 noselect">
             WAVEJSON:
             <div id='TXT'><textarea id="InputJSON_0"></textarea></div>
             <button id="refresh_wavedrom" onClick="refreshWaveDrom()">RENDER</button>
+        </div>
+        <div id="bottomDiv" class="div-2 noselect">
             <div id='SVG' style="overflow:scroll;"><div id="WaveDrom_Display_0"></div></div>
-            <div id="terminal"></div>
             <div id="viewerContainer">
                 <svg id="svgArea">
                 </svg>
@@ -155,11 +160,6 @@
         <script src="http://wavedrom.com/wavedrom.min.js" type="text/javascript"></script>
         <script src="xtermjs/xterm.js"></script>
         <script>
-        var term = new Terminal();
-        term.open(document.getElementById('terminal'));
-        term.on('data', (data) => {
-          document.getElementById('stdin_bufread').value += data;
-        })
         </script>
         <script src="index.js"></script>
     </body>

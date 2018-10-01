@@ -5,6 +5,33 @@ document.getElementById('statsDiv').appendChild( stats.dom );
 // Force this checkbox to false because otherwise we wont be able to press RUN
 document.getElementById("check_alive").checked = false;
 
+// Create terminals
+const termConfig = {
+    cols: 80,
+    rows: 24,
+};
+var term = new Terminal(termConfig);
+term.open(document.getElementById('terminal_1'));
+term.on('data', (data) => {
+  document.getElementById('stdin_bufread').value += data;
+})
+var term2 = new Terminal(termConfig);
+term2.open(document.getElementById('terminal_2'));
+term2.write('This terminal will be used for logging');
+var num_terminals = 2;
+function terminalTab(i) {
+    var i = Number.parseInt(i);
+    for(var j=1; j<=num_terminals; j++) {
+        var t = document.getElementById('terminal_' + j);
+        if(j == i) {
+            t.style.display = 'block';
+        } else {
+            t.style.display = 'none';
+        }
+    }
+}
+terminalTab(0);
+
 function refreshWaveDrom() {
     WaveDrom.EditorRefresh();
     var t = document.getElementById('SVG');
