@@ -130,7 +130,7 @@ impl CompDefinition {
         let ref name = c_zero.name;
 
         for c in [c_zero].iter() {
-            println!("Inserting {:#?}", c);
+            info!("Inserting {:#?}", c);
             let c_id = comp_id[&c.name];
             comp.push(c_id);
             let l_id = comp.len() - 1;
@@ -160,7 +160,7 @@ impl CompDefinition {
                 assignments.add(&c);
                 continue;
             }
-            println!("Inserting {:#?}", c);
+            info!("Inserting {:#?}", c);
             let c_id = match comp_id.get(&c.name) {
                 Some(a) => *a,
                 None => return Err(format!("Component {} not found", c.name)),
@@ -234,7 +234,7 @@ impl CompDefinition {
             }
         }
 
-        println!("ARRAY NAMES: {:?}", array_names);
+        debug!("ARRAY NAMES: {:?}", array_names);
 
         for (name, _dimension) in array_names {
             if let Some(_) = signals.get(&name.to_string()) {
@@ -247,7 +247,7 @@ impl CompDefinition {
         for ass in assignments.v.iter() {
             let ass2 = &ass[0];
             for ass1 in ass.iter().skip(1) {
-                println!("Replacing {} with {}", ass1, ass2);
+                debug!("Replacing {} with {}", ass1, ass2);
                 let x = signals.remove(&ass1).unwrap_or(vec![]);
                 signals.entry(&ass2).or_insert(vec![]).extend(x);
             }
@@ -281,7 +281,7 @@ impl CompDefinition {
             }
         }
 
-        println!("Signals: {:#?}", signals);
+        debug!("Signals: {:#?}", signals);
 
         Ok(Self { comp, connections, generics })
     }
@@ -330,7 +330,7 @@ impl ComponentFactory {
         Ok(Self { components, comp_id, comp_def, cache: RefCell::new(HashMap::new()), stdin_bufread: None, stdout_bufwrite: None })
     }
     pub fn create_named(&self, name: &str) -> Option<Box<Component>> {
-        println!("Creating component {}", name);
+        info!("Creating component {}", name);
         if let Some(c_id) = self.comp_id.get(name) {
             Some(self.create(*c_id))
         } else {
@@ -350,7 +350,7 @@ impl ComponentFactory {
         }
         */
 
-        println!("Creating component with id {}: {}", c_id.0, name);
+        info!("Creating component with id {}: {}", c_id.0, name);
         let ref def = self.comp_def[&c_id];
 
         let c_zero = CompIo::c_zero(inputs.len(), outputs.len());
@@ -364,7 +364,7 @@ impl ComponentFactory {
             //assert!(&self.components[new_id].name != name);
             let (num_i, num_o) = def.generics[&local_id];
             let boxed_gate = if let Some(c) = self.create_builtin(new_id, num_i, num_o) {
-                println!("DEBUG: Created builtin gate {}", self.components[&new_id].name);
+                info!("Created builtin gate {}", self.components[&new_id].name);
                 c
             } else {
                 self.create(new_id)

@@ -6,6 +6,12 @@ extern crate comphdl;
 #[macro_use]
 extern crate stdweb;
 
+#[macro_use]
+extern crate log;
+extern crate env_logger;
+
+#[cfg(feature = "stdweb")]
+mod stdweb_logger;
 #[cfg(feature = "stdweb")]
 pub mod js_gui;
 #[cfg(feature = "stdweb")]
@@ -59,10 +65,13 @@ pub fn parse_file(filename: &str, top: &str) {
 
 // Do not start automatically when loaded from js
 #[cfg(feature = "stdweb")]
-fn main(){}
+fn main(){
+    stdweb_logger::Logger::init_with_level(::log::LevelFilter::Info);
+}
 
 #[cfg(not(feature = "stdweb"))]
 fn main(){
+    env_logger::init();
     // Usage: cargo run (for default arguments)
     //        cargo run -- test.txt Buf123 (filename, component name)
     use std::env;

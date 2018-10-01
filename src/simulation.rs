@@ -11,7 +11,7 @@ pub fn run_simulation(w: &mut io::Write,
 
     {
         let a = c.clone_as_structural();
-        println!("{:#?}", a);
+        info!("{:#?}", a);
     }
 
     // Write the header
