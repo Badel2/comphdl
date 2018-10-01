@@ -107,12 +107,6 @@
             <div>
               <div id="comphdl_definition" style="height:500px; margin-right: 8px; margin-bottom: 16px; margin-top: 8px;"></div>
             </div>
-            TABS:
-            <button onClick="terminalTab(0)">HIDE TERMINAL</button>
-            <button onClick="terminalTab(1)">COMPONENT STDOUT</button>
-            <button onClick="terminalTab(2)">DEBUG LOGS</button>
-            <div id="terminal_1" style="margin-right: 8px;"></div>
-            <div id="terminal_2" style="margin-right: 8px;"></div>
         </div>
         <div class="div-3">
             <div id="statsDiv"></div>
@@ -139,6 +133,12 @@
             <button id="refresh_wavedrom" onClick="refreshWaveDrom()">RENDER</button>
         </div>
         <div id="bottomDiv" class="div-2 noselect">
+            TABS:
+            <button onClick="terminalTab(0)">HIDE TERMINAL</button>
+            <button onClick="terminalTab(1)">COMPONENT STDOUT</button>
+            <button onClick="terminalTab(2)">DEBUG LOGS</button>
+            <div id="terminal_1" style="margin-right: 8px;"></div>
+            <div id="terminal_2" style="margin-right: 8px;"></div>
             <div id='SVG' style="overflow:scroll;"><div id="WaveDrom_Display_0"></div></div>
             <div id="viewerContainer">
                 <svg id="svgArea">

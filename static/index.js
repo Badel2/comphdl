@@ -9,6 +9,7 @@ document.getElementById("check_alive").checked = false;
 const termConfig = {
     cols: 80,
     rows: 24,
+    scrollback: 10000, // default is 1000
 };
 var term = new Terminal(termConfig);
 term.open(document.getElementById('terminal_1'));
