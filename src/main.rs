@@ -9,6 +9,7 @@ extern crate stdweb;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
+extern crate ansi_term;
 
 #[cfg(feature = "stdweb")]
 mod stdweb_logger;
@@ -66,7 +67,7 @@ pub fn parse_file(filename: &str, top: &str) {
 // Do not start automatically when loaded from js
 #[cfg(feature = "stdweb")]
 fn main(){
-    stdweb_logger::Logger::init_with_level(::log::LevelFilter::Info);
+    stdweb_logger::Logger::init_with_level(::log::LevelFilter::Debug);
 }
 
 #[cfg(not(feature = "stdweb"))]

@@ -17,7 +17,7 @@ term.on('data', (data) => {
 })
 var term2 = new Terminal(termConfig);
 term2.open(document.getElementById('terminal_2'));
-term2.write('This terminal will be used for logging');
+//term2.write('This terminal will be used for logging');
 var num_terminals = 2;
 function terminalTab(i) {
     var i = Number.parseInt(i);
