@@ -140,7 +140,7 @@ impl Write for ValueWriter {
             }
         }
         // Fix newlines...
-        let bufstring = bufstring.replace("\n", "\n\r");
+        let bufstring = bufstring.replace("\n", "\r\n");
         js! {
             term.write(@{bufstring});
         }

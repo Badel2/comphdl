@@ -84,7 +84,7 @@ impl Log for Logger {
         ).unwrap();
 
         // xtermjs doesnt like newlines
-        let message = message.replace("\n", "\n\r");
+        let message = message.replace("\n", "\r\n");
 
         js!{
             term2.writeln(@{message});
