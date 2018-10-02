@@ -53,15 +53,16 @@
         <link rel="stylesheet" href="xtermjs/xterm.css" />
     </head>
     <body>
-        <div id="loading_wasm" style="display: block; color: #F00;">
-            WARNING: LOADING WASM... (if this message persists for a long time,
-            check if your browser supports WASM and disable any adblockers)
-        </div>
-        <div id="loaded_wasm" style="display: none; color: #0F0;">
-            WASM MODULE SUCCESSFULLY LOADED
-        </div>
         <div id="container">
         <div class="div-1">
+            <a href="https://github.com/Badel2/comphdl">COMPHDL</a>
+            <div id="loading_wasm" style="display: block; color: #F00;">
+                WARNING: LOADING WASM... (if this message persists for a long time,
+                check if your browser supports WASM and disable any adblockers)
+            </div>
+            <div id="loaded_wasm" style="display: none; color: #0F0;">
+                WASM MODULE SUCCESSFULLY LOADED
+            </div>
             <div>
               <button id=loadExampleButton onClick="loadExampleSelect()">LOAD EXAMPLE:</button>
               <select id=exampleName></select>
