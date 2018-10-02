@@ -82,6 +82,7 @@ impl ValueWriter {
             if(t != null) {
                 t.value = "";
             }
+            term2.clear();
         }
         Self { id, buf: vec![] }
     }
