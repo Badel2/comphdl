@@ -23,7 +23,9 @@ impl CompInfo {
         let mut repetitions = HashMap::new();
         for s in self.inputs.iter() {
             if let Some(_) = repetitions.get(s) {
-                panic!("Input names must be unique, {}.{} isn't", self.name, s);
+                let e = format!("Input names must be unique, {}.{} isn't", self.name, s);
+                error!("{}", e);
+                panic!("{}", e);
             }
             repetitions.insert(s, ());
         }
@@ -34,7 +36,9 @@ impl CompInfo {
         // quad(a) -> (a0, a1, a2, a3) { a0 = a; a1 = a; a2 = a; a3 = a; }
         for s in self.outputs.iter() {
             if let Some(_) = repetitions.get(s) {
-                panic!("Output names must be unique, '{}.{}' isn't", self.name, s);
+                let e = format!("Output names must be unique, '{}.{}' isn't", self.name, s);
+                error!("{}", e);
+                panic!("{}", e);
             }
             repetitions.insert(s, ());
         }
@@ -65,12 +69,14 @@ impl Assignments {
                 for x in ass {
                     if x == left {
                         if left_pos.is_some() {
+                            error!("Duplicate assignment (left_pos: {:?})", left_pos);
                             panic!("Duplicate");
                         }
                         left_pos = Some(i);
                     }
                     if x == right {
                         if right_pos.is_some() {
+                            error!("Duplicate assignment (right_pos: {:?})", left_pos);
                             panic!("Duplicate");
                         }
                         right_pos = Some(i);
@@ -100,7 +106,10 @@ impl Assignments {
                 (Some(i), Some(j)) if i == j => {
                     // Do nothing, they are already in the same group
                 }
-                _ => panic!("I missed something?"),
+                _ => {
+                    error!("Impossible branch taken");
+                    unreachable!()
+                }
             }
         }
     }
