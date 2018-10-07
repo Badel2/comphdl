@@ -179,8 +179,7 @@ impl CompDefinition {
             };
 
             // Verify than number of inputs and outputs match
-            // TODO: create is_builtin function
-            if ["Nand", "ConstantBit", "Stdin", "Stdout"].contains(&c.name.as_str()) {
+            if is_builtin(c.name.as_str()) {
                 // Builtin gates can have a generic number of inputs or outputs,
                 // we dont check them here, but they are checked when creating
                 // these components (create_builtin)
@@ -383,9 +382,14 @@ impl ComponentFactory {
             // Prevent recursive definitions
             //assert!(&self.components[new_id].name != name);
             let (num_i, num_o) = def.generics[&local_id];
-            let boxed_gate = if let Some(c) = self.create_builtin(new_id, num_i, num_o) {
-                info!("Created builtin gate {}", self.components[&new_id].name);
-                c
+            let boxed_gate = if is_builtin(&self.components[&new_id].name) {
+                if let Some(c) = self.create_builtin(new_id, num_i, num_o) {
+                    info!("Created builtin gate {}", self.components[&new_id].name);
+                    c
+                } else {
+                    error!("Error creating builtin gate {}. Wrong number of inputs/outputs?", self.components[&new_id].name);
+                    panic!("Error creating builtin gate {}. Wrong number of inputs/outputs?", self.components[&new_id].name);
+                }
             } else {
                 self.create(new_id)
             };
@@ -415,28 +419,21 @@ impl ComponentFactory {
     fn create_builtin(&self, c_id: CompId, num_inputs: usize, num_outputs: usize) -> Option<Box<Component>> {
         let ref name = self.components[&c_id].name;
 
-        Some(match name.as_str() {
-            "Nand" => {
-                assert_eq!(num_outputs, 1);
+        Some(match (num_inputs, num_outputs, name.as_str()) {
+            (_, 1, "Nand") => {
                 Box::new(Nand::new(num_inputs))
             }
-            "ConstantBit" => {
-                assert_eq!(num_inputs, 0);
-                assert_eq!(num_outputs, 3);
+            (0, 3, "ConstantBit") => {
                 Box::new(ConstantBit::new())
             }
-            "Stdin" => {
-                assert_eq!(num_inputs, 1);
-                assert_eq!(num_outputs, 9);
+            (1, 9, "Stdin") => {
                 if self.stdin_bufread.is_some() {
                     Box::new(Stdin::with_bufread(self.stdin_bufread.as_ref().unwrap().0.clone()))
                 } else {
                     Box::new(Stdin::new())
                 }
             }
-            "Stdout" => {
-                assert_eq!(num_inputs, 9);
-                assert_eq!(num_outputs, 0);
+            (9, 0, "Stdout") => {
                 if self.stdout_bufwrite.is_some() {
                     Box::new(Stdout::with_bufwrite(self.stdout_bufwrite.as_ref().unwrap().0.clone()))
                 } else {
@@ -483,6 +480,10 @@ fn insert_special_components(components: &mut HashMap<CompId, CompInfo>,
     components.insert(CompId(i), CompInfo::new("Stdout".into(), vec![], vec![])); // TODO
     comp_id.insert("Stdout".into(), CompId(i));
     //i += 1;
+}
+
+fn is_builtin(name: &str) -> bool {
+    ["Nand", "ConstantBit", "Stdin", "Stdout"].contains(&name)
 }
 
 // Line/column code taken from
