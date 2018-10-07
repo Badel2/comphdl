@@ -58,7 +58,10 @@ impl Assignments {
         Self { v: vec![], }
     }
     fn add(&mut self, c: &CompInfo) {
-        assert!(c.inputs.len() == c.outputs.len(), "unbalanced assignment");
+        if c.inputs.len() != c.outputs.len() {
+            error!("Unbalanced assignment: {} on the left, and {} on the right", c.outputs.len(), c.inputs.len());
+            panic!("Unbalanced assignment");
+        }
         for (left, right) in c.inputs.iter().zip(c.outputs.iter()) {
             if left == right {
                 continue;
@@ -216,7 +219,11 @@ impl CompDefinition {
         for (s, _con) in &signals {
             let parts: Vec<_> = s.split("$").collect();
             if parts.len() > 1 {
-                assert!(parts.len() == 2);
+                if parts.len() != 2 {
+                    return Err(format!(
+                        "Only 1D arrays are supported at the moment, got {:?} in component {}",
+                        parts, c_zero.name));
+                }
                 array_names.insert(parts[0], 1); // 1D array
             }
         }
@@ -225,7 +232,11 @@ impl CompDefinition {
             for name in group.iter() {
                 let parts: Vec<_> = name.split("$").collect();
                 if parts.len() > 1 {
-                    assert!(parts.len() == 2);
+                    if parts.len() != 2 {
+                        return Err(format!(
+                            "Only 1D arrays are supported at the moment, got {:?} in component {}",
+                            parts, c_zero.name));
+                    }
                     array_names.insert(parts[0], 1); // 1D array
                 }
             }
@@ -236,7 +247,7 @@ impl CompDefinition {
                 let parts: Vec<_> = name.split("$").collect();
                 if parts.len() == 1 {
                     if let Some(_) = array_names.get(parts[0]) {
-                        return Err(format!("Signal `{}` is used as an array, but also as a bit", name));
+                        return Err(format!("Signal `{}` is used as an array, but also as a bit, in component {}", name, c_zero.name));
                 
                     }
                 }
@@ -247,7 +258,7 @@ impl CompDefinition {
 
         for (name, _dimension) in array_names {
             if let Some(_) = signals.get(&name.to_string()) {
-                return Err(format!("Signal `{}` is used as an array, but also as a bit", name));
+                return Err(format!("Signal `{}` is used as an array, but also as a bit, in component {}", name, c_zero.name));
             }
         }
 
@@ -278,8 +289,8 @@ impl CompDefinition {
                 }
             }
             if from.len() > 1 {
-                return Err(format!("Signal {} is connected to more than one output: {:#?}",
-                       s, con));
+                return Err(format!("Component {}:\nSignal {} is connected to more than one output:\n{:#?}",
+                       c_zero.name, s, con));
             }
             // Remove duplicate connections (can be created using assignments)
             let to = to_set.drain().map(|(k, _v)| k).collect();
@@ -384,9 +395,11 @@ impl ComponentFactory {
 
         for (from, to) in &def.connections {
             let ref mut x = c[from.c_id];
-            assert!(from.is_output());
             for ref to in to {
-                assert!(!to.is_output());
+                if !(from.is_output() && !to.is_output()) {
+                    error!("Invalid assignment in component {}:\n{:?}", name, (from, to));
+                    panic!("Invalid assignment");
+                }
                 x.add_connection(from.port_id, Index::new(to.c_id, to.port_id));
             }
         }

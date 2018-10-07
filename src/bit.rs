@@ -34,7 +34,10 @@ impl Bit {
         ]
     }
     pub fn bit8_into_u8(b: &[Bit]) -> u8 {
-        assert_eq!(b.len(), 8);
+        if b.len() != 8 {
+            error!("Expected [Bit; 8], got [Bit; {}]", b.len());
+            panic!("Expected [Bit; 8], got [Bit; {}]", b.len());
+        }
         let mut x = 0;
         for i in 0..8 {
             x |= ((b[i] == Bit::H) as u8) << (7-i);
