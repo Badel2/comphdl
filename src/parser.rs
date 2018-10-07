@@ -66,6 +66,16 @@ impl Assignments {
             if left == right {
                 continue;
             }
+
+            // Ignore assignments to _ and _[0:0]
+            let ignore_underscore_array = |x: &str| {
+                let mut parts = x.split("$");
+                parts.next().unwrap() == "_"
+            };
+            if ignore_underscore_array(left) || ignore_underscore_array(right) {
+                continue;
+            }
+
             let mut left_pos = None;
             let mut right_pos = None;
             for (i, ass) in self.v.iter().enumerate() {
@@ -271,7 +281,13 @@ impl CompDefinition {
                 signals.entry(&ass2).or_insert(vec![]).extend(x);
             }
         }
-        
+
+        // Treat _ signal as unconnected
+        signals.retain(|k, _| {
+            let mut parts = k.split("$");
+            // Retain all signals except _ and _[range]
+            parts.next().unwrap() != "_"
+        });
 
         let mut connections = HashMap::with_capacity(signals.len());
 
@@ -709,4 +725,42 @@ fn cat() {
         s.update(&[Bit::H]);
     }
     assert_eq!(&input, handle.borrow_mut().get_ref());
+}
+
+#[test]
+fn unconnected() {
+    let d = r#"
+component Add(a, b, c_in) -> (c_out, x) {
+    c_out = a;
+    x = b;
+}
+
+component Add2(a, b) -> (x, y) {
+    Add(a, b, _) -> (_, x);
+    Add(b, a, _) -> (_, y);
+}
+
+component Add4(a) -> (x, y) {
+    Add(a, _[1:0]) -> (_[0:0], x);
+    Add(b, _[2:1]) -> (_[0:0], y);
+}
+
+component AssignNothing(a[3:0], b[3:0]) -> x {
+    a[3:0] = (_, _, _, _);
+    b[3:0] = (_, _, _, _);
+    x = _;
+    x = a[2];
+}
+component AssignNothingArray(a[3:0], b[3:0]) -> x[3:0] {
+    a[3:0] = _[3:0];
+    b[3:0] = _[3:0];
+    x[3:0] = _[3:0];
+    x[3:0] = a[3:0];
+}
+    "#;
+
+    let pd = comphdl1::FileParser::new().parse(d).unwrap();
+    let cf = ComponentFactory::new(pd);
+    println!("{:#?}", cf);
+    assert!(!cf.is_err());
 }
