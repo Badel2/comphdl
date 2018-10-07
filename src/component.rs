@@ -303,6 +303,7 @@ impl Component for Stdout {
                     Ok(_) => {}
                     Err(_) => {}
                 }
+                stdout.flush();
             } else {
                 let stdout = self.buf.as_ref().unwrap();
                 let stdout = stdout.0.try_borrow_mut();
@@ -311,6 +312,7 @@ impl Component for Stdout {
                         Ok(_) => {}
                         Err(_) => {}
                     }
+                    stdout.flush();
                 } else {
                     // The Rc has more than one owner, panic?
                 }
