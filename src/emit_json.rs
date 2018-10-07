@@ -100,6 +100,18 @@ impl Cell {
     ) -> Cell {
         let mut port_directions = HashMap::new();
         let mut yosys_connections = vec![];
+        // Rename ports to match port names of svg skin
+        let replaced_port_names = match (n_in, n_out, name.as_str()) {
+            (1, 1, "Buf") => {
+                Some(PortNames::new(&["A"], &["Y"]))
+            }
+            (1, 1, "Not") => {
+                Some(PortNames::new(&["A"], &["Y"]))
+            }
+            _ => None
+        };
+        let port_names = replaced_port_names.as_ref().unwrap_or(port_names);
+
         for i in 0..n_in {
             let ref pn = port_names.input[i];
             port_directions.insert(format!("{}", pn), Direction::Input);
@@ -112,7 +124,13 @@ impl Cell {
             port_directions.insert(format!("{}", pn), Direction::Output);
             //let jj = ComponentIndex::output(c_id, i);
             let mut yos_addr = vec![];
-            // TODO: if connections is empty, insert dummy port
+            // if connections is empty, insert dummy port
+            if connections[i].is_empty() {
+                let a = ComponentIndex::output(c_id, i);
+                yos_addr.push(pin_addr_to_yosys_addr[&a]);
+            }
+            // if there is more than 1 connection, a split join will be
+            // created
             for x in connections[i].iter() {
                 let a = if x.comp_id == 0 {
                     ComponentIndex::output(x.comp_id, x.input_id)
