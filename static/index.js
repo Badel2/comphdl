@@ -7,7 +7,12 @@ import { Terminal } from 'xterm';
 //import { WaveDrom } from 'wavedrom';
 window.WaveSkin = require('wavedrom/skins/narrow.js');
 var WaveDrom = require('wavedrom');
-console.error(WaveDrom);
+var Stats = require('stats.js');
+
+var stats = new Stats();
+stats.showPanel( 0 );
+stats.dom.style.cssText = '';
+document.getElementById('statsDiv').appendChild( stats.dom );
 
 // Assets
 // import...
@@ -150,7 +155,9 @@ export function register_main_loop(main_loop) {
 
         function demo() {
             if(check_run_forever.checked || check_run_step.checked) {
+                stats.begin();
                 main_loop(check_show_debug.checked, check_show_signals.checked, check_monitor_signals.checked);
+                stats.end();
                 if(check_render_wavedrom.checked) {
                     refreshWaveDrom();
                 }
