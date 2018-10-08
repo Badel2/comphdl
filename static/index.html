@@ -64,9 +64,9 @@
                 WASM MODULE SUCCESSFULLY LOADED
             </div>
             <div>
-              <button id=loadExampleButton onClick="loadExampleSelect()">LOAD EXAMPLE:</button>
+              <button id=loadExampleButton>LOAD EXAMPLE:</button>
               <select id=exampleName></select>
-              <button id=shareCode onClick="shareCode()">SHARE LINK</button>
+              <button id=shareCode>SHARE LINK</button>
             </div>
             <div id=shareCodeDiv style="display: none;">
               Manually copy the following link:
@@ -76,12 +76,12 @@
             </div>
             <div>
               <input type="text" id="top_name" placeholder="Top component name"></input>
-              <button id="comphdl_start" onClick="runGui()">RUN!</button>
+              <button id="comphdl_start">RUN!</button>
             </div>
                 <div id="simulation_controls" style="display: none;">
             <div id="draggableControls">
                 <small id="draggableControlsheader" style="background-color: #55a;">Make this floating and move it:</small>
-                <button onClick="toggleFloatingControls()">TOGGLE FLOATING</button>
+                <button id="toggleFloatingControls">TOGGLE FLOATING</button>
                   <div>
                     Tick:
                     <input type="text" id="tick_display" size="7">
@@ -96,10 +96,10 @@
                     <input type="checkbox" id="check_render_wavedrom"> auto-render wave
                   </div>
                   <div>
-                    <button id="pause_simulation" onClick="pauseSimulation()">PAUSE</button>
-                    <button id="run_step" onClick="runStep()">ONE STEP</button>
-                    <button id="run_forever" onClick="resumeSimulation()">RESUME</button>
-                    <button id="stop_simulation" onClick="stopSimulation()">STOP</button>
+                    <button id="pause_simulation">PAUSE</button>
+                    <button id="run_step">ONE STEP</button>
+                    <button id="run_forever">RESUME</button>
+                    <button id="stop_simulation">STOP</button>
                   </div>
                 <div id="top_input"></div>
                 <div id="top_output"></div>
@@ -135,9 +135,9 @@
         </div>
         <div id="bottomDiv" class="div-2 noselect">
             TABS:
-            <button onClick="terminalTab(0)">HIDE TERMINAL</button>
-            <button onClick="terminalTab(1)">COMPONENT STDOUT</button>
-            <button onClick="terminalTab(2)">DEBUG LOGS</button>
+            <button id="terminal_tab_0">HIDE TERMINAL</button>
+            <button id="terminal_tab_1">COMPONENT STDOUT</button>
+            <button id="terminal_tab_2">DEBUG LOGS</button>
             <div id="terminal_1" style="margin-right: 8px;"></div>
             <div id="terminal_2" style="margin-right: 8px;"></div>
             <div id='SVG' style="overflow:scroll;"><div id="WaveDrom_Display_0"></div></div>
@@ -147,19 +147,8 @@
             </div>
         </div>
         </div>
-        <script src="ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-        <script>
-            var editor = ace.edit("comphdl_definition");
-            editor.setTheme("ace/theme/tomorrow");
-            editor.session.setMode("ace/mode/rust");
-        </script>
-        <script src="stats.min.js"></script>
-        <script src="comphdl.js"></script>
-        <script src="elk.bundled.js"></script>
-        <script src="netlistsvg.js"></script>
-        <script src="wavedrom/skins/narrow.js"></script>
-        <script src="wavedrom/wavedrom.min.js"></script>
-        <script src="xtermjs/xterm.js"></script>
-        <script src="index.js"></script>
+        <script src="./wavedrom/skins/narrow.js"></script>
+        <script src="./wavedrom/wavedrom.min.js"></script>
+        <script src="./index.js"></script>
     </body>
 </html>

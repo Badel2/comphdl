@@ -1,0 +1,31 @@
+{
+  "name": "comphdl",
+  "version": "0.1.0",
+  "description": "A digital logic simulator with its own component description language",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Badel2/comphdl.git"
+  },
+  "author": "",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/Badel2/comphdl/issues"
+  },
+  "homepage": "https://github.com/Badel2/comphdl#readme",
+  "dependencies": {
+    "ace-builds": "^1.4.1",
+    "netlistsvg": "file:netlistsvg",
+    "parcel-plugin-cargo-web": "^0.3.0",
+    "stats.js": "^0.17.0",
+    "superagent": "^4.0.0-beta.5",
+    "webworker-threads": "^0.7.17",
+    "xterm": "^3.8.0"
+  }
+}

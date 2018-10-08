@@ -1,7 +1,53 @@
-var stats = new Stats();
-stats.showPanel( 0 );
-stats.dom.style.cssText = '';
-document.getElementById('statsDiv').appendChild( stats.dom );
+'use strict';
+import comphdl from "../comphdl_web/Cargo.toml";
+import ace from "./ace-builds/src-noconflict/ace.js";
+import { Terminal } from 'xterm';
+
+// Assets
+// import...
+
+ace.config.set('basePath', 'ace-builds/src-noconflict/ace.js')
+var editor = ace.edit("comphdl_definition");
+editor.setTheme("ace/theme/tomorrow");
+editor.session.setMode("ace/mode/rust");
+
+var superagent = require('superagent');
+var json5 = require('json5');
+var netlistSvg = require('netlistsvg');
+
+var skins = ['skins/comphdl.svg', 'skins/default.svg', 'skins/analog.svg'];
+
+var textarea = document.querySelector('#comphdl_json');
+var skinSelect = document.querySelector('#skinSelect');
+var renderButton = document.querySelector('#renderButton');
+var formatButton = document.querySelector('#formatButton');
+var viewer = document.querySelector('#viewerContainer');
+
+skins.forEach(function(skinPath, i) {
+    superagent.get(skinPath).end(function(err, r) {
+        var option = document.createElement('option');
+        option.selected = i === 0;
+        option.value = r.text;
+        option.text = skinPath;
+        skinSelect.append(option);
+    });
+});
+
+function render() {
+    var netlist = json5.parse(textarea.value);
+    return netlistSvg.render(skinSelect.value, netlist).then(function(svg) {
+        viewer.innerHTML = svg;
+    });
+}
+
+function format() {
+    var netlist = json5.parse(textarea.value);
+    textarea.value = json5.stringify(netlist, null, 4);
+}
+
+renderButton.onclick = render;
+formatButton.onclick = format;
+
 // Force this checkbox to false because otherwise we wont be able to press RUN
 document.getElementById("check_alive").checked = false;
 
@@ -11,12 +57,12 @@ const termConfig = {
     rows: 24,
     scrollback: 10000, // default is 1000
 };
-var term = new Terminal(termConfig);
+export var term = new Terminal(termConfig);
 term.open(document.getElementById('terminal_1'));
 term.on('data', (data) => {
   document.getElementById('stdin_bufread').value += data;
 })
-var term2 = new Terminal(termConfig);
+export var term2 = new Terminal(termConfig);
 term2.open(document.getElementById('terminal_2'));
 //term2.write('This terminal will be used for logging');
 var num_terminals = 2;
@@ -39,49 +85,47 @@ function refreshWaveDrom() {
     t.scrollLeft = t.scrollWidth;
 }
 
-Rust.comphdl.then(function(comphdl) {
-    document.getElementById("loading_wasm").style.display = "none";
-    document.getElementById("loaded_wasm").style.display = "block";
+document.getElementById("loading_wasm").style.display = "none";
+document.getElementById("loaded_wasm").style.display = "block";
 
-    /* Parse GET params: index.html?top=TopName&code=asdf */
-    // TODO: we should do this immediately on window load, without
-    // waiting for the Rust module
-    // Also, more options
-    var url = new URL(window.location.href);
-    var searchParams = new URLSearchParams(url.search);
-    var gotCode = searchParams.get('code');  // outputs "m2-m3-m4-m5"
-    var gotExampleName = searchParams.get('example');
+/* Parse GET params: index.html?top=TopName&code=asdf */
+// TODO: we should do this immediately on window load, without
+// waiting for the Rust module
+// Also, more options
+var url = new URL(window.location.href);
+var searchParams = new URLSearchParams(url.search);
+var gotCode = searchParams.get('code');  // outputs "m2-m3-m4-m5"
+var gotExampleName = searchParams.get('example');
 
-    if (gotCode != null) {
-        // Ideally this would create a new tab so we dont lose the existing code
-        editor.setValue(gotCode);
-    } else if (gotExampleName != null) {
-        loadExample(false, gotExampleName);
-    } else {
-        loadExample(false, "example1.txt");
-    }
+if (gotCode != null) {
+    // Ideally this would create a new tab so we dont lose the existing code
+    editor.setValue(gotCode);
+} else if (gotExampleName != null) {
+    loadExample(false, gotExampleName);
+} else {
+    loadExample(false, "example1.txt");
+}
 
-    var gotTop = searchParams.get('top');  // outputs "m2-m3-m4-m5"
-    if (gotTop != null) {
-        document.getElementById("top_name").value = gotTop;
-    }
+var gotTop = searchParams.get('top');  // outputs "m2-m3-m4-m5"
+if (gotTop != null) {
+    document.getElementById("top_name").value = gotTop;
+}
 
-    var examples = ["example1.txt", "bufbufbuf.txt", "ram.txt", "srlatch.txt", "cat.txt"];
-    if (gotExampleName == null) {
-        gotExampleName = "example1.txt";
-    }
-    var examplesSelect = document.getElementById("exampleName");
-    examples.forEach(function(e, i) {
-        var option = document.createElement('option');
-        option.selected = e == gotExampleName;
-        option.value = e;
-        option.text = e;
-        examplesSelect.append(option);
-    });
-    dragElement(document.getElementById("draggableControls"));
+var examples = ["example1.txt", "bufbufbuf.txt", "ram.txt", "srlatch.txt", "cat.txt"];
+if (gotExampleName == null) {
+    gotExampleName = "example1.txt";
+}
+var examplesSelect = document.getElementById("exampleName");
+examples.forEach(function(e, i) {
+    var option = document.createElement('option');
+    option.selected = e == gotExampleName;
+    option.value = e;
+    option.text = e;
+    examplesSelect.append(option);
 });
+dragElement(document.getElementById("draggableControls"));
 
-function register_main_loop(main_loop) {
+export function register_main_loop(main_loop) {
         var check_run_forever = document.getElementById("check_run_forever");
         var check_run_step = document.getElementById("check_run_step");
         var check_alive = document.getElementById("check_alive");
@@ -96,9 +140,7 @@ function register_main_loop(main_loop) {
 
         function demo() {
             if(check_run_forever.checked || check_run_step.checked) {
-                stats.begin();
                 main_loop(check_show_debug.checked, check_show_signals.checked, check_monitor_signals.checked);
-                stats.end();
                 if(check_render_wavedrom.checked) {
                     refreshWaveDrom();
                 }
@@ -175,56 +217,54 @@ function shareCode() {
 }
 
 function runGui() {
-    Rust.comphdl.then(function(comphdl) {
-        var alive = document.getElementById("check_alive");
-        // TODO: check if a thread is already running and kill it
-        if (alive.checked) {
-            // TODO: kill it
-            alert("Stop the program before running it again");
-            showSimulationControls();
-            // We cannot kill it here because the Rust code will not update
-            // and we get a classical race condition.
-            // This could maybe be fixed by giving each Rust instance its own
-            // uuid, and have a field "running_uuid" which must match or the
-            // program will stop
-            return;
-        }
-        alive.checked = true;
-        var error_string = comphdl.run_js_gui();
-        console.log(error_string);
-        document.getElementById("top_output_debug").value = error_string;
+    var alive = document.getElementById("check_alive");
+    // TODO: check if a thread is already running and kill it
+    if (alive.checked) {
+        // TODO: kill it
+        alert("Stop the program before running it again");
         showSimulationControls();
-        document.getElementById("renderButton").onclick().then(function(svg) {
-            // Enable clicking to svg ports toggles inputs
-            var ti = document.getElementById("top_input");
-            for(var i=0; i<ti.children.length; i++) {
-                var tic = ti.children[i];
-                var inputid = tic.id.replace("checkbox_input_", "inputExt_");
-                tic.onclick = function(){
-                    var inputid = this.id.replace("checkbox_input_", "inputExt_");
-                    var ig = document.getElementById(inputid);
-                    if(ig) {
-                        if(this.checked) {
-                            ig.style = "fill: #70FF70;";
-                        } else {
-                            ig.style = "fill: #147014;";
-                        }
-                    }
-                };
+        // We cannot kill it here because the Rust code will not update
+        // and we get a classical race condition.
+        // This could maybe be fixed by giving each Rust instance its own
+        // uuid, and have a field "running_uuid" which must match or the
+        // program will stop
+        return;
+    }
+    alive.checked = true;
+    var error_string = comphdl.run_js_gui(editor.getValue());
+    console.log(error_string);
+    document.getElementById("top_output_debug").value = error_string;
+    showSimulationControls();
+    document.getElementById("renderButton").onclick().then(function(svg) {
+        // Enable clicking to svg ports toggles inputs
+        var ti = document.getElementById("top_input");
+        for(var i=0; i<ti.children.length; i++) {
+            var tic = ti.children[i];
+            var inputid = tic.id.replace("checkbox_input_", "inputExt_");
+            tic.onclick = function(){
+                var inputid = this.id.replace("checkbox_input_", "inputExt_");
                 var ig = document.getElementById(inputid);
                 if(ig) {
-                    ig.style = "fill: #147014;";
-                    ig.onclick = function(){
-                        var checkboxid = this.id.replace("inputExt_", "checkbox_input_");
-                        document.getElementById(checkboxid).click();
-                    };
-                } else {
-                    console.error(tic.id + " is missing the corresponding " + inputid + " in the svg")
+                    if(this.checked) {
+                        ig.style = "fill: #70FF70;";
+                    } else {
+                        ig.style = "fill: #147014;";
+                    }
                 }
+            };
+            var ig = document.getElementById(inputid);
+            if(ig) {
+                ig.style = "fill: #147014;";
+                ig.onclick = function(){
+                    var checkboxid = this.id.replace("inputExt_", "checkbox_input_");
+                    document.getElementById(checkboxid).click();
+                };
+            } else {
+                console.error(tic.id + " is missing the corresponding " + inputid + " in the svg")
             }
+        }
 
-            resumeSimulation();
-        });
+        resumeSimulation();
     });
 }
 
@@ -310,3 +350,17 @@ function dragElement(elmnt) {
         document.onmousemove = null;
     }
 }
+
+document.getElementById('comphdl_start').onclick = runGui;
+document.getElementById('pause_simulation').onclick = pauseSimulation;
+document.getElementById('run_step').onclick = runStep;
+document.getElementById('run_forever').onclick = resumeSimulation;
+document.getElementById('stop_simulation').onclick = stopSimulation;
+document.getElementById('loadExampleButton').onclick = loadExampleSelect;
+document.getElementById('shareCode').onclick = shareCode;
+document.getElementById('toggleFloatingControls').onclick = toggleFloatingControls;
+document.getElementById('refresh_wavedrom').onclick = refreshWaveDrom;
+document.getElementById('terminal_tab_0').onclick = function() { terminalTab(0) };
+document.getElementById('terminal_tab_1').onclick = function() { terminalTab(1) };
+document.getElementById('terminal_tab_2').onclick = function() { terminalTab(2) };
+

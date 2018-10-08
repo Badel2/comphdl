@@ -10,3 +10,6 @@ static/elk.bundled.js
 static/lib
 static/netlistsvg.js
 static/skins
+dist/
+comphdl_web/target/
+.cache/
