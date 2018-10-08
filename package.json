@@ -26,6 +26,7 @@
     "parcel-plugin-cargo-web": "^0.3.0",
     "stats.js": "^0.17.0",
     "superagent": "^4.0.0-beta.5",
+    "wavedrom": "^1.7.4",
     "webworker-threads": "^0.7.17",
     "xterm": "^3.8.0"
   }

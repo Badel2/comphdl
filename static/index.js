@@ -4,6 +4,10 @@ import * as ace from 'brace';
 import 'brace/theme/tomorrow';
 import 'brace/mode/rust';
 import { Terminal } from 'xterm';
+//import { WaveDrom } from 'wavedrom';
+window.WaveSkin = require('wavedrom/skins/narrow.js');
+var WaveDrom = require('wavedrom');
+console.error(WaveDrom);
 
 // Assets
 // import...
@@ -86,7 +90,7 @@ function terminalTab(i) {
 terminalTab(0);
 
 function refreshWaveDrom() {
-    WaveDrom.EditorRefresh();
+    WaveDrom.editorRefresh();
     var t = document.getElementById('SVG');
     t.scrollLeft = t.scrollWidth;
 }
