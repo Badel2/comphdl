@@ -21,6 +21,7 @@
   "homepage": "https://github.com/Badel2/comphdl#readme",
   "dependencies": {
     "ace-builds": "^1.4.1",
+    "brace": "^0.11.1",
     "netlistsvg": "file:netlistsvg",
     "parcel-plugin-cargo-web": "^0.3.0",
     "stats.js": "^0.17.0",

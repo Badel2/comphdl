@@ -1,6 +1,8 @@
 'use strict';
 import comphdl from "../comphdl_web/Cargo.toml";
-import ace from "./ace-builds/src-noconflict/ace.js";
+import * as ace from 'brace';
+import 'brace/theme/tomorrow';
+import 'brace/mode/rust';
 import { Terminal } from 'xterm';
 
 // Assets
