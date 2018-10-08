@@ -15,7 +15,11 @@ var superagent = require('superagent');
 var json5 = require('json5');
 var netlistSvg = require('netlistsvg');
 
-var skins = ['skins/comphdl.svg', 'skins/default.svg', 'skins/analog.svg'];
+var skins = [
+    { url: require('./skins/comphdl.svg'), name: 'comphdl.svg' },
+    { url: require('./skins/default.svg'), name: 'default.svg' },
+    { url: require('./skins/analog.svg'), name: 'analog.svg' }
+];
 
 var textarea = document.querySelector('#comphdl_json');
 var skinSelect = document.querySelector('#skinSelect');
@@ -23,12 +27,12 @@ var renderButton = document.querySelector('#renderButton');
 var formatButton = document.querySelector('#formatButton');
 var viewer = document.querySelector('#viewerContainer');
 
-skins.forEach(function(skinPath, i) {
-    superagent.get(skinPath).end(function(err, r) {
+skins.forEach(function(skin, i) {
+    superagent.get(skin.url).end(function(err, r) {
         var option = document.createElement('option');
         option.selected = i === 0;
         option.value = r.text;
-        option.text = skinPath;
+        option.text = skin.name;
         skinSelect.append(option);
     });
 });
