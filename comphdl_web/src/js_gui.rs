@@ -329,6 +329,13 @@ pub fn run_js_gui(definition: &str) -> String {
         }
         js! {
             var stylesheet = document.getElementById("wire_style");
+            if (stylesheet == null) {
+                console.log("wire_style is null, appending new style tag to body");
+                stylesheet = document.createElement("style");
+                stylesheet.type = "text/css";
+                stylesheet.id = "wire_style";
+                document.head.appendChild(stylesheet);
+            }
             stylesheet.innerHTML = @{s};
         }
     };
