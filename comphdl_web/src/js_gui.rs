@@ -324,19 +324,19 @@ pub fn run_js_gui(definition: &str) -> String {
                     Bit::H => 'H',
                     Bit::X => 'X',
                 };
-                s.push_str(&format!(".wire_port{}_s0 {{ stroke: var(--comphdl-wire-color-{}); stroke-width: var(--comphdl-wire-width-{}) }}", i, bitchar, bitchar));
+                let wire_port_id = format!(".wire_port{}_s0", i);
+                let color = format!("var(--comphdl-wire-color-{})", bitchar);
+                let width = format!("var(--comphdl-wire-width-{})", bitchar);
+
+                // TODO: performance implications of js macro inside for loop
+                js! {
+                    var x = document.querySelectorAll(@{wire_port_id});
+                    for (var i = 0; i < x.length; i++) {
+                        x[i].style.stroke = @{color};
+                        x[i].style.strokeWidth = @{width};
+                    }
+                }
             }
-        }
-        js! {
-            var stylesheet = document.getElementById("wire_style");
-            if (stylesheet == null) {
-                console.log("wire_style is null, appending new style tag to body");
-                stylesheet = document.createElement("style");
-                stylesheet.type = "text/css";
-                stylesheet.id = "wire_style";
-                document.head.appendChild(stylesheet);
-            }
-            stylesheet.innerHTML = @{s};
         }
     };
 
