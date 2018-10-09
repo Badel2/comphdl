@@ -263,15 +263,18 @@ function runGui() {
                 var ig = document.getElementById(inputid);
                 if(ig) {
                     if(this.checked) {
-                        ig.style = "fill: #70FF70;";
+                        ig.style.fill = "var(--comphdl-wire-color-H)";
                     } else {
-                        ig.style = "fill: #147014;";
+                        ig.style.fill = "var(--comphdl-wire-color-L)";
                     }
+                } else {
+                    ig.style.fill = "var(--comphdl-wire-color-X)";
                 }
             };
             var ig = document.getElementById(inputid);
+            // Initialize inputExt to 0
             if(ig) {
-                ig.style = "fill: #147014;";
+                ig.style.fill = "var(--comphdl-wire-color-L)";
                 ig.onclick = function(){
                     var checkboxid = this.id.replace("inputExt_", "checkbox_input_");
                     document.getElementById(checkboxid).click();

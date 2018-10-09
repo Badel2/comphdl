@@ -292,12 +292,13 @@ pub fn run_js_gui(definition: &str) -> String {
                 }
             }
 
-            let color = match outputs[i] {
-                Bit::L => "#147014",
-                Bit::H => "#70FF70",
-                Bit::X => "#FF0A0A",
+            // Color svg output ports
+            let bitchar = match outputs[i] {
+                Bit::L => 'L',
+                Bit::H => 'H',
+                Bit::X => 'X',
             };
-
+            let color = format!("var(--comphdl-wire-color-{})", bitchar);
             let name = &outputnames[i];
 
             js! {
