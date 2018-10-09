@@ -319,12 +319,12 @@ pub fn run_js_gui(definition: &str) -> String {
                 } else {
                     yosys_addr[&ComponentIndex::input(c_id, port_id)]
                 };
-                let color = match *x {
-                    Bit::L => "#147014",
-                    Bit::H => "#70FF70",
-                    Bit::X => "#FF0A0A",
+                let bitchar = match *x {
+                    Bit::L => 'L',
+                    Bit::H => 'H',
+                    Bit::X => 'X',
                 };
-                s.push_str(&format!(".wire_port{}_s0 {{ stroke: {}; stroke-width: 3; }}", i, color));
+                s.push_str(&format!(".wire_port{}_s0 {{ stroke: var(--comphdl-wire-color-{}); stroke-width: var(--comphdl-wire-width-{}) }}", i, bitchar, bitchar));
             }
         }
         js! {
