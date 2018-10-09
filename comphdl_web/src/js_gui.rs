@@ -310,11 +310,18 @@ pub fn run_js_gui(definition: &str) -> String {
         }
     };
 
-    let set_style_output_and_signals = move |signals: &[Vec<Bit>]| {
+    let set_style_output_and_signals = move |signals: &[Vec<Bit>], old_signals: &Option<Vec<Vec<Bit>>>| {
         // The first element in signals must be c_zero's outputs!
         let mut s = format!("");
         for (c_id, c) in signals.iter().enumerate() {
             for (port_id, x) in c.iter().enumerate() {
+                // Skip update if signal has not changed
+                if let Some(old) = old_signals {
+                    if old[c_id][port_id] == *x {
+                        continue;
+                    }
+                }
+
                 let i = if c_id == 0 {
                     yosys_addr[&ComponentIndex::output(c_id, port_id)]
                 } else {
@@ -364,17 +371,18 @@ pub fn run_js_gui(definition: &str) -> String {
         if show_signals {
             let internal = c.internal_inputs().unwrap();
             // Skip update if the internal signals have not changed
-            //if old_internal.is_none() || old_internal.as_ref().unwrap() != &internal {
-            if old_internal.as_ref().map_or(true, |o| o != &internal) {
-                set_style_output_and_signals(&internal);
-            }
-            if monitor_signals {
-                set_wave_json(c.as_structural().unwrap());
-            } else {
-                // Erasing the wave json is not supported yet
-                // Remember to update tick
-            }
+            set_style_output_and_signals(&internal, &old_internal);
+
             old_internal = Some(internal);
+        } else {
+            old_internal = None;
+        }
+
+        if monitor_signals {
+            set_wave_json(c.as_structural().unwrap());
+        } else {
+            // Erasing the wave json is not supported yet
+            // Remember to update tick
         }
 
         if show_debug {

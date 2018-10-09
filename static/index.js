@@ -247,7 +247,10 @@ function runGui() {
         // program will stop
         return;
     }
+
+    pauseSimulation();
     alive.checked = true;
+
     var error_string = comphdl.run_js_gui(editor.getValue());
     console.log(error_string);
     document.getElementById("top_output_debug").value = error_string;
