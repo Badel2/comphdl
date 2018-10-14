@@ -1,4 +1,6 @@
 #!/bin/sh
+echo 'Outdated, use ci/parcel.sh'
+exit 1
 #git checkout gh-pages
 #git pull origin master
 cd netlistsvg

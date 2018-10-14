@@ -3,9 +3,6 @@ name = "comphdl_web"
 version = "0.1.0"
 authors = ["Badel2 <2badel2@gmail.com>"]
 
-[build]
-target = "wasm32-unknown-unknown"
-
 [dependencies]
 comphdl = { path = "../comphdl_core" }
 serde = "1.0"
