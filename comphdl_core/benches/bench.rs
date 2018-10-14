@@ -15,11 +15,11 @@ component Or2(a, b) -> x {
 }
 "#;
 
-static MULTIBUF: &str = include_str!("../static/comphdl_examples/bufbufbuf.txt"); 
+static MULTIBUF: &str = include_str!("../../static/comphdl_examples/bufbufbuf.txt"); 
 
-static RAM16K: &str = include_str!("../static/comphdl_examples/ram.txt");
+static RAM16K: &str = include_str!("../../static/comphdl_examples/ram.txt");
 
-static CAT: &str = include_str!("../static/comphdl_examples/cat.txt");
+static CAT: &str = include_str!("../../static/comphdl_examples/cat.txt");
 
 #[bench]
 fn parse_null(b: &mut Bencher) {

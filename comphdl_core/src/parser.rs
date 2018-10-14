@@ -696,7 +696,7 @@ component ArrayTest1D(a[3:0]) -> b[3:0] {
 fn cat() {
     use bit::Bit;
     // This could be a nice bench
-    let d = include_str!("../static/comphdl_examples/cat.txt");
+    let d = include_str!("../../static/comphdl_examples/cat.txt");
     let input = format!("Hello, world!").into_bytes();
     let out = vec![];
     let (s, handle) = {

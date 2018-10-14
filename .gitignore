@@ -11,5 +11,6 @@ static/lib
 static/netlistsvg.js
 static/skins
 dist/
+comphdl_core/target/
 comphdl_web/target/
 .cache/
