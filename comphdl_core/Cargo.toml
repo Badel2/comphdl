@@ -14,7 +14,6 @@ serde_derive = "1.0"
 vcd = "0.4"
 lalrpop-util = "0.16"
 regex = "1.0"
-stdweb = { version = "0.4", optional = true }
 log = "0.4"
 env_logger = "0.5"
 ansi_term = "0.11"

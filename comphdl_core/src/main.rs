@@ -1,22 +1,9 @@
-#![recursion_limit = "256"]
-
 extern crate comphdl;
-
-#[cfg(feature = "stdweb")]
-#[macro_use]
-extern crate stdweb;
 
 #[macro_use]
 extern crate log;
 extern crate env_logger;
 extern crate ansi_term;
-
-#[cfg(feature = "stdweb")]
-mod stdweb_logger;
-#[cfg(feature = "stdweb")]
-pub mod js_gui;
-#[cfg(feature = "stdweb")]
-pub use js_gui::*;
 
 use comphdl::bit::RepInputIterator;
 use comphdl::component::Component;
@@ -43,6 +30,7 @@ pub fn parse_file(filename: &str, top: &str) {
     let mut cf = parser::parse_str(&bs).unwrap();
     // If file stdin.txt exists, read input from there instead of stdin
     if let Ok(stdin_bufread) = File::open("stdin.txt") {
+        info!("Reading input from stdin.txt");
         cf.set_stdin_bufread(Rc::new(RefCell::new(BufReader::new(stdin_bufread))));
     }
     let mux = cf.create_named(top).unwrap();
@@ -63,14 +51,6 @@ pub fn parse_file(filename: &str, top: &str) {
     yosys_netlist(&*gate);
 }
 
-
-// Do not start automatically when loaded from js
-#[cfg(feature = "stdweb")]
-fn main(){
-    stdweb_logger::Logger::init_with_level(::log::LevelFilter::Debug);
-}
-
-#[cfg(not(feature = "stdweb"))]
 fn main(){
     env_logger::init();
     // Usage: cargo run (for default arguments)
