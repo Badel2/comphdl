@@ -4,6 +4,7 @@ import * as ace from 'brace';
 import 'brace/theme/tomorrow';
 import 'brace/mode/rust';
 import { Terminal } from 'xterm';
+import * as WaveDromFastUpdate from './wavedrom_fast_update.js'
 //import { WaveDrom } from 'wavedrom';
 window.WaveSkin = require('wavedrom/skins/narrow.js');
 var WaveDrom = require('wavedrom');
@@ -94,12 +95,6 @@ function terminalTab(i) {
 }
 terminalTab(0);
 
-function refreshWaveDrom() {
-    WaveDrom.editorRefresh();
-    var t = document.getElementById('SVG');
-    t.scrollLeft = t.scrollWidth;
-}
-
 document.getElementById("loading_wasm").style.display = "none";
 document.getElementById("loaded_wasm").style.display = "block";
 
@@ -159,7 +154,10 @@ export function register_main_loop(main_loop) {
                 main_loop(check_show_debug.checked, check_show_signals.checked, check_monitor_signals.checked);
                 stats.end();
                 if(check_render_wavedrom.checked) {
-                    refreshWaveDrom();
+                    // FIXME: we must force tick to be 0 until the graph is full
+                    // To fix, find a way to preallocate an empty graph or just
+                    // set everything to X
+                    WaveDromFastUpdate.refreshWaveDrom(WaveDrom, tick > 50 ? tick : 0);
                 }
                 check_run_step.checked = false;
                 tick += 1;
@@ -382,7 +380,9 @@ document.getElementById('stop_simulation').onclick = stopSimulation;
 document.getElementById('loadExampleButton').onclick = loadExampleSelect;
 document.getElementById('shareCode').onclick = shareCode;
 document.getElementById('toggleFloatingControls').onclick = toggleFloatingControls;
-document.getElementById('refresh_wavedrom').onclick = refreshWaveDrom;
+document.getElementById('refresh_wavedrom').onclick = function() {
+    WaveDromFastUpdate.refreshWaveDrom(WaveDrom, 0)
+};
 document.getElementById('terminal_tab_0').onclick = function() { terminalTab(0) };
 document.getElementById('terminal_tab_1').onclick = function() { terminalTab(1) };
 document.getElementById('terminal_tab_2').onclick = function() { terminalTab(2) };

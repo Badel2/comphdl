@@ -51,6 +51,18 @@ impl WaveJson {
     pub fn to_json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string(&self)
     }
+    // Returns a string representing the last value of each signal:
+    // 1..
+    // 0..   <= these 3 signals will return ".,.,0"
+    // ..0
+    pub fn last_values(&self) -> String {
+        let mut v = vec![];
+        for s in &self.signal {
+            let last_value = s.wave.chars().last().unwrap_or('X');
+            v.push(format!("{}", last_value));
+        }
+        v.join(",")
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

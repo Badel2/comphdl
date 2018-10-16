@@ -351,10 +351,13 @@ pub fn run_js_gui(definition: &str) -> String {
     let mut set_wave_json = move |c: &Structural| {
         // WaveJSON for WaveDrom
         wave_json.update(c);
+        let last_s = wave_json.last_values();
         let s = wave_json.to_json().unwrap();
         js! {
             var txt = document.getElementById("InputJSON_0");
             txt.value = @{s};
+            var l = document.getElementById("InputJSON_0_last");
+            l.value = @{last_s};
         }
     };
 
