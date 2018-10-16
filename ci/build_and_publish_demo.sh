@@ -18,5 +18,9 @@ ci/parcel.sh &&
 git add demo/nightly &&
 git commit -qm 'Nighlty demo' &&
 # We must somehow preserve the demo/v07 folder...
-git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages &&
+exit 0
+
+# If any command fails, exit with error status
+exit 1
 
