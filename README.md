@@ -18,12 +18,17 @@ https://badel2.github.io/2018/02/08/comphdl-01.html
 
 # Dependencies
 
-The Rust dependencies are listed in `Cargo.toml` file, but the `js` libraries
-are listed here, as we do not have a `package.json` file yet:
+The Rust dependencies are listed in `comphdl_core/Cargo.toml` and
+`comphdl_web/Cargo.toml`, and the JavaScript dependencies are in
+`package.json`. The most relevant ones are:
 
-* [netlistsvg](https://github.com/nturley/netlistsvg): Draws an SVG schematic from a JSON netlist
+Rust:
+* [LALRPOP](https://github.com/lalrpop/lalrpop): LR(1) parser generator for Rust 
+* [stdweb](https://github.com/koute/stdweb): A standard library for the client-side Web
+
+JavaScript:
+* [netlistsvg](https://github.com/nturley/netlistsvg): Draws an SVG schematic from a JSON netlist, using [ELK](https://www.npmjs.com/package/elkjs)
 * [ACE](https://ace.c9.io/): A code editor for the web
-* [stats.js](https://github.com/mrdoob/stats.js): A simple FPS widget
 * [WaveDrom](https://wavedrom.com/): Digital timing diagram rendering engine
 * [xtermjs](https://xtermjs.org/): A terminal for the web
 
