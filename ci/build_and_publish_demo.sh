@@ -13,8 +13,6 @@ ci/install_cargo_web.sh &&
 source ~/.nvm/nvm.sh &&
 nvm install $NODE_VERSION &&
 npm install -g parcel-bundler &&
-# https://github.com/npm/npm/issues/13528#issuecomment-396522166
-npm install netlistsvg/ &&
 npm install &&
 ci/parcel.sh &&
 git add demo/nightly &&

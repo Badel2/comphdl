@@ -15,7 +15,8 @@ if [ -z "$TRAVIS_REPO_SLUG" ]; then
 else
     while [ 1 ]; do sleep 5m && pidof cargo > /dev/null && echo "travis_wait: cargo still running"; done &
 fi
-parcel build static/index.html --log-level 4 --public-url $PUBLIC_URL
+
+parcel build static/index.html --log-level 4 --public-url $PUBLIC_URL || exit $?
 
 if [ -f dist/index.html ]; then
     # Deploy to demo/nightly folder
