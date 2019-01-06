@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "comphdl_cli",
     "comphdl_core",
     "comphdl_web",
 ]

@@ -1,0 +1,10 @@
+[package]
+name = "comphdl_cli"
+version = "0.1.0"
+authors = ["Badel2 <2badel2@gmail.com>"]
+
+[dependencies]
+comphdl = { path = "../comphdl_core" }
+log = "0.4"
+env_logger = "0.6"
+

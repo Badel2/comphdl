@@ -114,6 +114,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "comphdl_cli"
+version = "0.1.0"
+dependencies = [
+ "comphdl 0.1.0",
+ "env_logger 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "comphdl_web"
 version = "0.1.0"
 dependencies = [

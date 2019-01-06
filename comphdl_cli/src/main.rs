@@ -3,7 +3,6 @@ extern crate comphdl;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
-extern crate ansi_term;
 
 use comphdl::bit::RepInputIterator;
 use comphdl::component::Component;
@@ -62,3 +61,4 @@ fn main(){
     let top = args.next().unwrap_or(format!("Demux_1_4"));
     parse_file(&filename, &top);
 }
+
