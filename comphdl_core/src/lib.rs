@@ -14,5 +14,8 @@ pub mod parser;
 pub mod bit;
 pub mod component;
 pub mod simulation;
-lalrpop_mod!(pub comphdl1);
+lalrpop_mod!{
+    #[allow(clippy::all)]
+    pub comphdl1
+}
 

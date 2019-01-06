@@ -69,7 +69,7 @@ impl Assignments {
 
             // Ignore assignments to _ and _[0:0]
             let ignore_underscore_array = |x: &str| {
-                let mut parts = x.split("$");
+                let mut parts = x.split('$');
                 parts.next().unwrap() == "_"
             };
             if ignore_underscore_array(left) || ignore_underscore_array(right) {
@@ -141,6 +141,7 @@ pub struct CompDefinition {
 }
 
 impl CompDefinition {
+    //TODO: warning: the function has a cyclomatic complexity of 29
     fn new(components: &HashMap<CompId, CompInfo>,
            comp_id: &HashMap<String, CompId>,
            c_zero: &CompInfo,
@@ -149,7 +150,7 @@ impl CompDefinition {
         let mut comp = vec![];
         let mut assignments = Assignments::new();
         let mut signals = HashMap::new();
-        let ref name = c_zero.name;
+        let name = &c_zero.name;
 
         for c in [c_zero].iter() {
             info!("Inserting {:#?}", c);
@@ -226,7 +227,7 @@ impl CompDefinition {
         // Verify that arrays have unique names: (a, a[3:0]) should fail
         let mut array_names = HashMap::new();
         for (s, _con) in &signals {
-            let parts: Vec<_> = s.split("$").collect();
+            let parts: Vec<_> = s.split('$').collect();
             if parts.len() > 1 {
                 if parts.len() != 2 {
                     return Err(format!(
@@ -239,7 +240,7 @@ impl CompDefinition {
 
         for group in assignments.v.iter() {
             for name in group.iter() {
-                let parts: Vec<_> = name.split("$").collect();
+                let parts: Vec<_> = name.split('$').collect();
                 if parts.len() > 1 {
                     if parts.len() != 2 {
                         return Err(format!(
@@ -253,7 +254,7 @@ impl CompDefinition {
 
         for group in assignments.v.iter() {
             for name in group.iter() {
-                let parts: Vec<_> = name.split("$").collect();
+                let parts: Vec<_> = name.split('$').collect();
                 if parts.len() == 1 {
                     if let Some(_) = array_names.get(parts[0]) {
                         return Err(format!("Signal `{}` is used as an array, but also as a bit, in component {}", name, c_zero.name));
@@ -284,7 +285,7 @@ impl CompDefinition {
 
         // Treat _ signal as unconnected
         signals.retain(|k, _| {
-            let mut parts = k.split("$");
+            let mut parts = k.split('$');
             // Retain all signals except _ and _[range]
             parts.next().unwrap() != "_"
         });
@@ -374,9 +375,9 @@ impl ComponentFactory {
         }
     }
     fn create(&self, c_id: CompId) -> Box<dyn Component> {
-        let ref inputs = self.components[&c_id].inputs;
-        let ref outputs = self.components[&c_id].outputs;
-        let ref name = self.components[&c_id].name;
+        let inputs = &self.components[&c_id].inputs;
+        let outputs = &self.components[&c_id].outputs;
+        let name = &self.components[&c_id].name;
 
         /*
         if let Some(c) = self.cache.borrow().get(&c_id) {
@@ -386,7 +387,7 @@ impl ComponentFactory {
         */
 
         info!("Creating component with id {}: {}", c_id.0, name);
-        let ref def = self.comp_def[&c_id];
+        let def = &self.comp_def[&c_id];
 
         let c_zero = CompIo::c_zero(inputs.len(), outputs.len());
         let mut c = vec![c_zero];
@@ -414,7 +415,7 @@ impl ComponentFactory {
         }
 
         for (from, to) in &def.connections {
-            let ref mut x = c[from.c_id];
+            let x = &mut c[from.c_id];
             for ref to in to {
                 if !(from.is_output() && !to.is_output()) {
                     error!("Invalid assignment in component {}:\n{:?}", name, (from, to));
@@ -433,7 +434,7 @@ impl ComponentFactory {
         c
     }
     fn create_builtin(&self, c_id: CompId, num_inputs: usize, num_outputs: usize) -> Option<Box<dyn Component>> {
-        let ref name = self.components[&c_id].name;
+        let name = &self.components[&c_id].name;
 
         Some(match (num_inputs, num_outputs, name.as_str()) {
             (_, 1, "Nand") => {

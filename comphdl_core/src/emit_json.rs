@@ -94,7 +94,7 @@ struct Cell {
 
 impl Cell {
     fn new(c_id: usize, name: String, n_in: usize, n_out: usize,
-           connections: &Vec<Vec<Index>>,
+           connections: &[Vec<Index>],
            pin_addr_to_yosys_addr: &HashMap<ComponentIndex, usize>,
            port_names: &PortNames
     ) -> Cell {
@@ -113,14 +113,14 @@ impl Cell {
         let port_names = replaced_port_names.as_ref().unwrap_or(port_names);
 
         for i in 0..n_in {
-            let ref pn = port_names.input[i];
+            let pn = &port_names.input[i];
             port_directions.insert(format!("{}", pn), Direction::Input);
             let x = ComponentIndex::input(c_id, i);
             let yos_addr = vec![pin_addr_to_yosys_addr[&x]];
             yosys_connections.push((format!("{}", pn), yos_addr));
         }
         for i in 0..n_out {
-            let ref pn = port_names.output[i];
+            let pn = &port_names.output[i];
             port_directions.insert(format!("{}", pn), Direction::Output);
             //let jj = ComponentIndex::output(c_id, i);
             let mut yos_addr = vec![];
@@ -177,14 +177,14 @@ fn ports_and_addrs(c: &Structural) -> (HashMap<String, Port>, HashMap<ComponentI
     let mut pin_addr_to_yosys_addr: HashMap<ComponentIndex, usize> = HashMap::new();
     let mut ya = 2; // start with address 2 because 0 and 1 are logical 0 and 1
     for i in 0..num_inputs {
-        let ref port_name = c.port_names().input[i];
+        let port_name = &c.port_names().input[i];
         ports.insert(format!("{}", port_name), Port::input(ya));
         let pa = ComponentIndex::input(0, i);
         pin_addr_to_yosys_addr.insert(pa, ya);
         ya += 1;
     }
     for i in 0..num_outputs {
-        let ref port_name = c.port_names().output[i];
+        let port_name = &c.port_names().output[i];
         ports.insert(format!("{}", port_name), Port::output(ya));
         let pa = ComponentIndex::output(0, i);
         pin_addr_to_yosys_addr.insert(pa, ya);
@@ -224,8 +224,8 @@ fn ports_and_addrs(c: &Structural) -> (HashMap<String, Port>, HashMap<ComponentI
         for x in to {
             if x.comp_id == 0 {
                 let a = ComponentIndex::output(x.comp_id, x.input_id);
-                let ref port_name = c.port_names().output[x.input_id];
-                let ref port_name_in = c.port_names().input[i];
+                let port_name = &c.port_names().output[x.input_id];
+                let port_name_in = &c.port_names().input[i];
                 let ex = ports[port_name_in].bits.clone();
                 ports.get_mut(port_name).unwrap().bits = ex;
                 *pin_addr_to_yosys_addr.get_mut(&a).unwrap() = pin_addr_to_yosys_addr[&pa];
@@ -268,7 +268,7 @@ where
 // Preserve insertion order, using a Vec(K, V) and serializing as a Map<K, V>
 // https://serde.rs/impl-serialize.html
 use serde::ser::SerializeMap;
-fn vec_into_map<S, K, V>(value: &Vec<(K, V)>, serializer: S) -> Result<S::Ok, S::Error>
+fn vec_into_map<S, K, V>(value: &[(K, V)], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
     K: Serialize,

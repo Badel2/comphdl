@@ -295,11 +295,11 @@ impl Component for Stdout {
         assert_eq!(input.len(), 9);
         // On rising edge:
         if self.last_clk == Bit::L && input[0] == Bit::H {
-            let mut buf = [Bit::bit8_into_u8(&input[1..]); 1];
+            let buf = [Bit::bit8_into_u8(&input[1..]); 1];
             if self.buf.is_none() {
                 let stdout = io::stdout();
                 let mut stdout = stdout.lock();
-                match stdout.write_all(&mut buf) {
+                match stdout.write_all(&buf) {
                     Ok(_) => {}
                     Err(_) => {}
                 }
@@ -308,7 +308,7 @@ impl Component for Stdout {
                 let stdout = self.buf.as_ref().unwrap();
                 let stdout = stdout.0.try_borrow_mut();
                 if let Ok(mut stdout) = stdout {
-                    match stdout.write_all(&mut buf) {
+                    match stdout.write_all(&buf) {
                         Ok(_) => {}
                         Err(_) => {}
                     }
@@ -515,13 +515,13 @@ impl Component for Structural {
             let instance_name = format!("{}-{}", self.name(), j);
             writer.add_module(&instance_name)?;
             for i in 0..self.num_inputs() {
-                let ref port_name = self.info.inputs[i];
+                let port_name = &self.info.inputs[i];
                 vh.id.insert(vi, writer.add_wire(1,
                     &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
             }
             for i in 0..self.num_outputs() {
-                let ref port_name = self.info.outputs[i];
+                let port_name = &self.info.outputs[i];
                 vh.id.insert(vi, writer.add_wire(1,
                     &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
@@ -536,13 +536,13 @@ impl Component for Structural {
             writer.add_module(&instance_name)?;
             let port_names = c.comp.port_names();
             for i in 0..c.comp.num_inputs() {
-                let ref port_name = port_names.input[i];
+                let port_name = &port_names.input[i];
                 vh.id.insert(vi, writer.add_wire(1,
                     &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
             }
             for i in 0..c.comp.num_outputs() {
-                let ref port_name =port_names.output[i];
+                let port_name =&port_names.output[i];
                 vh.id.insert(vi, writer.add_wire(1,
                     &format!("{}-{}", instance_name, port_name))?);
                 vi.port += 1;
@@ -564,16 +564,16 @@ impl Component for Structural {
 
         if write_parent {
             // TODO: create a less error prone helper method
-            let ref inputs = self.components[0].output;
-            let ref outputs = self.components[0].input;
+            let inputs = &self.components[0].output;
+            let outputs = &self.components[0].input;
             let vi = InstanceIndex::new(*j as usize, 0);
             write_vcd_signals(writer, vi, vh, inputs, outputs)?;
             *j += 1;
         }
 
         for c in self.components.iter().skip(1).filter(|&c| VCD_SHOW_NAND || (c.comp.name() != "NAND")) {
-            let ref inputs = c.input;
-            let ref outputs = c.output;
+            let inputs = &c.input;
+            let outputs = &c.output;
             let vi = InstanceIndex::new(*j as usize, 0);
             write_vcd_signals(writer, vi, vh, inputs, outputs)?;
             *j += 1;
