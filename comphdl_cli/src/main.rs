@@ -1,8 +1,8 @@
-extern crate comphdl;
+
 
 #[macro_use]
 extern crate log;
-extern crate env_logger;
+use env_logger;
 
 use comphdl::bit::RepInputIterator;
 use comphdl::component::Component;
@@ -13,7 +13,7 @@ use std::fs::File;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-fn yosys_netlist(c: &Component) {
+fn yosys_netlist(c: &dyn Component) {
     // We can only generate netlists from structural, not from component
     let c = c.clone_as_structural().unwrap();
     let s = emit_json::from_structural(&c).unwrap();

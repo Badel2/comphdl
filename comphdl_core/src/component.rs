@@ -21,10 +21,10 @@ pub trait Component: std::fmt::Debug {
     fn num_inputs(&self) -> usize;
     fn num_outputs(&self) -> usize;
     fn name(&self) -> &str;
-    fn write_internal_components(&self, _w: &mut vcd::Writer, _i: &mut u64) -> io::Result<VcdSignalHandle> {
+    fn write_internal_components(&self, _w: &mut vcd::Writer<'_>, _i: &mut u64) -> io::Result<VcdSignalHandle> {
         Ok(VcdSignalHandle { id: HashMap::new() })
     }
-    fn write_internal_signals(&self, _w: &mut vcd::Writer, _i: &mut u64, _vh: &VcdSignalHandle) -> io::Result<()> {
+    fn write_internal_signals(&self, _w: &mut vcd::Writer<'_>, _i: &mut u64, _vh: &VcdSignalHandle) -> io::Result<()> {
         Ok(())
     }
     fn port_names(&self) -> PortNames {
@@ -39,11 +39,11 @@ pub trait Component: std::fmt::Debug {
     fn clone_as_structural(&self) -> Option<Structural> {
         Some(Structural::new_wrap(self.box_clone()))
     }
-    fn box_clone(&self) -> Box<Component>;
+    fn box_clone(&self) -> Box<dyn Component>;
 }
 
-impl Clone for Box<Component> {
-    fn clone(&self) -> Box<Component> {
+impl Clone for Box<dyn Component> {
+    fn clone(&self) -> Box<dyn Component> {
         self.box_clone()
     }
 }
@@ -66,7 +66,7 @@ impl InstanceIndex {
 }
 
 // FIXME: This function is the main bottleneck
-pub fn write_vcd_signals(writer: &mut vcd::Writer, vi: InstanceIndex, vh: &VcdSignalHandle,
+pub fn write_vcd_signals(writer: &mut vcd::Writer<'_>, vi: InstanceIndex, vh: &VcdSignalHandle,
                      signals1: &[Bit], signals2: &[Bit]) -> io::Result<InstanceIndex> {
     let mut vi = vi.clone();
 
@@ -124,7 +124,7 @@ impl Component for Nand {
     fn name(&self) -> &str {
         "Nand"
     }
-    fn box_clone(&self) -> Box<Component> {
+    fn box_clone(&self) -> Box<dyn Component> {
         Box::new((*self).clone())
     }
 }
@@ -155,7 +155,7 @@ impl Component for ConstantBit {
     fn name(&self) -> &str {
         "ConstantBit"
     }
-    fn box_clone(&self) -> Box<Component> {
+    fn box_clone(&self) -> Box<dyn Component> {
         Box::new((*self).clone())
     }
     fn port_names(&self) -> PortNames {
@@ -164,11 +164,11 @@ impl Component for ConstantBit {
 }
 
 #[derive(Clone)]
-pub struct RcBufRead(pub Rc<RefCell<BufRead>>);
+pub struct RcBufRead(pub Rc<RefCell<dyn BufRead>>);
 
 // Manually implement debug because Rc<BufRead> does not implement it
 impl fmt::Debug for RcBufRead {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RcBufRead")
             .field("buf_rc_count", &Rc::strong_count(&self.0))
             .finish()
@@ -190,7 +190,7 @@ impl Stdin {
     pub fn new() -> Self {
         Self { last_clk: Bit::X, last_out: vec![Bit::X; 8], eof: Bit::X, buf: None }
     }
-    pub fn with_bufread(r: Rc<RefCell<BufRead>>) -> Self {
+    pub fn with_bufread(r: Rc<RefCell<dyn BufRead>>) -> Self {
         let mut s = Self::new();
         s.buf = Some(RcBufRead(r));
 
@@ -251,7 +251,7 @@ impl Component for Stdin {
     fn name(&self) -> &str {
         "Stdin"
     }
-    fn box_clone(&self) -> Box<Component> {
+    fn box_clone(&self) -> Box<dyn Component> {
         Box::new((*self).clone())
     }
     fn port_names(&self) -> PortNames {
@@ -259,11 +259,11 @@ impl Component for Stdin {
     }
 }
 #[derive(Clone)]
-pub struct RcWrite(pub Rc<RefCell<Write>>);
+pub struct RcWrite(pub Rc<RefCell<dyn Write>>);
 
 // Manually implement debug because dyn Write does not implement it
 impl fmt::Debug for RcWrite {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RcWrite")
             .field("buf_rc_count", &Rc::strong_count(&self.0))
             .finish()
@@ -282,7 +282,7 @@ impl Stdout {
     pub fn new() -> Self {
         Self { last_clk: Bit::X, buf: None }
     }
-    pub fn with_bufwrite(r: Rc<RefCell<Write>>) -> Self {
+    pub fn with_bufwrite(r: Rc<RefCell<dyn Write>>) -> Self {
         let mut s = Self::new();
         s.buf = Some(RcWrite(r));
 
@@ -335,7 +335,7 @@ impl Component for Stdout {
     fn name(&self) -> &str {
         "Stdout"
     }
-    fn box_clone(&self) -> Box<Component> {
+    fn box_clone(&self) -> Box<dyn Component> {
         Box::new((*self).clone())
     }
     fn port_names(&self) -> PortNames {
@@ -412,7 +412,7 @@ impl Structural {
         Structural::new(components, info)
     }
     // Create a Structural from one Component
-    pub fn new_wrap(component: Box<Component>) -> Structural {
+    pub fn new_wrap(component: Box<dyn Component>) -> Structural {
         let port_names = component.port_names();
         let num_inputs = port_names.input.len();
         let num_outputs = port_names.output.len();
@@ -507,7 +507,7 @@ impl Component for Structural {
     fn name(&self) -> &str {
         &self.info.name
     }
-    fn write_internal_components(&self, writer: &mut vcd::Writer, j: &mut u64) -> io::Result<VcdSignalHandle> {
+    fn write_internal_components(&self, writer: &mut vcd::Writer<'_>, j: &mut u64) -> io::Result<VcdSignalHandle> {
         let mut vh = VcdSignalHandle { id: HashMap::new() };
         let write_parent = *j == 0;
         if write_parent {
@@ -559,7 +559,7 @@ impl Component for Structural {
         Ok(vh)
     }
 
-    fn write_internal_signals(&self, writer: &mut vcd::Writer, j: &mut u64, vh: &VcdSignalHandle) -> io::Result<()> {
+    fn write_internal_signals(&self, writer: &mut vcd::Writer<'_>, j: &mut u64, vh: &VcdSignalHandle) -> io::Result<()> {
         let write_parent = *j == 0;
 
         if write_parent {
@@ -600,14 +600,14 @@ impl Component for Structural {
     fn clone_as_structural(&self) -> Option<Structural> {
         Some(self.clone())
     }
-    fn box_clone(&self) -> Box<Component> {
+    fn box_clone(&self) -> Box<dyn Component> {
         Box::new((*self).clone())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct CompIo {
-    pub comp: Box<Component>,
+    pub comp: Box<dyn Component>,
     input: Vec<Bit>,
     output: Vec<Bit>,
     pub connections: Vec<Vec<Index>>,
@@ -615,7 +615,7 @@ pub struct CompIo {
 }
 
 impl CompIo {
-    pub fn new(comp: Box<Component>) -> CompIo {
+    pub fn new(comp: Box<dyn Component>) -> CompIo {
         let input = vec![Bit::X; comp.num_inputs()];
         let output = vec![Bit::X; comp.num_outputs()];
         let connections = vec![vec![]; comp.num_outputs()];

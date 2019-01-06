@@ -327,7 +327,7 @@ pub struct ComponentFactory {
     comp_id: HashMap<String, CompId>,
     components: HashMap<CompId, Rc<CompInfo>>,
     comp_def: HashMap<CompId, Rc<CompDefinition>>,
-    cache: RefCell<HashMap<CompId, Box<Component>>>,
+    cache: RefCell<HashMap<CompId, Box<dyn Component>>>,
     stdin_bufread: Option<RcBufRead>,
     stdout_bufwrite: Option<RcWrite>,
 }
@@ -364,7 +364,7 @@ impl ComponentFactory {
 
         Ok(Self { components, comp_id, comp_def, cache: RefCell::new(HashMap::new()), stdin_bufread: None, stdout_bufwrite: None })
     }
-    pub fn create_named(&self, name: &str) -> Option<Box<Component>> {
+    pub fn create_named(&self, name: &str) -> Option<Box<dyn Component>> {
         info!("Creating component {}", name);
         if let Some(c_id) = self.comp_id.get(name) {
             Some(self.create(*c_id))
@@ -373,7 +373,7 @@ impl ComponentFactory {
             None
         }
     }
-    fn create(&self, c_id: CompId) -> Box<Component> {
+    fn create(&self, c_id: CompId) -> Box<dyn Component> {
         let ref inputs = self.components[&c_id].inputs;
         let ref outputs = self.components[&c_id].outputs;
         let ref name = self.components[&c_id].name;
@@ -409,7 +409,7 @@ impl ComponentFactory {
             } else {
                 self.create(new_id)
             };
-            let mut x = CompIo::new(boxed_gate);
+            let x = CompIo::new(boxed_gate);
             c.push(x);
         }
 
@@ -432,7 +432,7 @@ impl ComponentFactory {
 
         c
     }
-    fn create_builtin(&self, c_id: CompId, num_inputs: usize, num_outputs: usize) -> Option<Box<Component>> {
+    fn create_builtin(&self, c_id: CompId, num_inputs: usize, num_outputs: usize) -> Option<Box<dyn Component>> {
         let ref name = self.components[&c_id].name;
 
         Some(match (num_inputs, num_outputs, name.as_str()) {
@@ -459,7 +459,7 @@ impl ComponentFactory {
             _ => return None,
         })
     }
-    pub fn set_stdin_bufread(&mut self, r: Rc<RefCell<BufRead>>) {
+    pub fn set_stdin_bufread(&mut self, r: Rc<RefCell<dyn BufRead>>) {
         self.stdin_bufread = Some(RcBufRead(r));
     }
     // Use the returned value to modify the input vector.
@@ -469,7 +469,7 @@ impl ComponentFactory {
         self.stdin_bufread = Some(RcBufRead(handle.clone()));
         handle
     }
-    pub fn set_stdout_bufwrite(&mut self, r: Rc<RefCell<Write>>) {
+    pub fn set_stdout_bufwrite(&mut self, r: Rc<RefCell<dyn Write>>) {
         self.stdout_bufwrite = Some(RcWrite(r));
     }
     // Use the returned value to read the data written to the vector
@@ -579,7 +579,7 @@ struct Location {
 }
 
 impl fmt::Display for Location {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "line {}, col {}", self.line.0, self.column.0)
     }
 }

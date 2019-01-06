@@ -1,8 +1,8 @@
-extern crate serde;
+
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
-extern crate vcd;
+use serde_json;
+use vcd;
 #[macro_use]
 extern crate lalrpop_util;
 #[macro_use]

@@ -3,9 +3,9 @@ use crate::bit::Bit;
 use crate::component::Component;
 use std::io;
 
-pub fn run_simulation(w: &mut io::Write,
-                  c: &mut Component,
-                  inputs: &mut Iterator<Item=Vec<Bit>>,
+pub fn run_simulation(w: &mut dyn io::Write,
+                  c: &mut dyn Component,
+                  inputs: &mut dyn Iterator<Item=Vec<Bit>>,
                   ticks: usize) -> io::Result<()> {
     let mut writer = vcd::Writer::new(w);
 

@@ -1,6 +1,6 @@
 #![recursion_limit = "256"]
 
-extern crate comphdl;
+
 
 #[cfg(target_arch = "wasm32")]
 #[macro_use]
@@ -8,8 +8,8 @@ extern crate stdweb;
 
 #[macro_use]
 extern crate log;
-extern crate env_logger;
-extern crate ansi_term;
+
+
 
 #[cfg(target_arch = "wasm32")]
 mod stdweb_logger;
