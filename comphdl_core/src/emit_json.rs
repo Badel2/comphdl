@@ -1,5 +1,5 @@
 use serde_json;
-use component::{Component, Structural, PortNames, Index, ComponentIndex, Direction};
+use crate::component::{Component, Structural, PortNames, Index, ComponentIndex, Direction};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize)]

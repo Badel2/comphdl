@@ -1,6 +1,6 @@
 use serde_json;
-use component::{Component, Structural};
-use bit::Bit;
+use crate::component::{Component, Structural};
+use crate::bit::Bit;
 use std::cmp;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -140,7 +140,7 @@ impl Foot {
 
 #[test]
 fn from_or2() {
-    use parser;
+    use crate::parser;
     const OR2: &str = r#"
     component Or2(a, b) -> x {
         Nand(a) -> n_a;

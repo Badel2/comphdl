@@ -1,6 +1,6 @@
 use vcd::{ self, Value, TimescaleUnit, SimulationCommand };
-use bit::Bit;
-use component::Component;
+use crate::bit::Bit;
+use crate::component::Component;
 use std::io;
 
 pub fn run_simulation(w: &mut io::Write,

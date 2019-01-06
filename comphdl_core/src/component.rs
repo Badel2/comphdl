@@ -1,6 +1,6 @@
 use vcd;
-use bit::Bit;
-use parser::CompInfo;
+use crate::bit::Bit;
+use crate::parser::CompInfo;
 use std;
 use std::fmt;
 use std::io;

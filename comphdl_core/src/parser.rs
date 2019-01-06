@@ -1,5 +1,5 @@
-use component::{ComponentIndex, Index, Component, CompIo, Structural, Nand, ConstantBit, Stdin, RcBufRead, Stdout, RcWrite};
-use comphdl1;
+use crate::component::{ComponentIndex, Index, Component, CompIo, Structural, Nand, ConstantBit, Stdin, RcBufRead, Stdout, RcWrite};
+use crate::comphdl1;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -694,7 +694,7 @@ component ArrayTest1D(a[3:0]) -> b[3:0] {
 }
 #[test]
 fn cat() {
-    use bit::Bit;
+    use crate::bit::Bit;
     // This could be a nice bench
     let d = include_str!("../../static/comphdl_examples/cat.txt");
     let input = format!("Hello, world!").into_bytes();
