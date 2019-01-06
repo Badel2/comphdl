@@ -2,6 +2,7 @@
 name = "comphdl_cli"
 version = "0.1.0"
 authors = ["Badel2 <2badel2@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 comphdl = { path = "../comphdl_core" }
