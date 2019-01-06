@@ -6,8 +6,6 @@ rm -rf .cache
 rm -rf dist
 mkdir -p dist
 cp -rf static/comphdl_examples/ dist/
-cp -f netlistsvg/lib/analog.svg static/skins/
-cp -f netlistsvg/lib/default.svg static/skins/
 PAGES_URL="/comphdl/demo/nightly"
 LOCAL_URL="/"
 # deploy to PAGES_URL if on travis, deploy to / if building locally

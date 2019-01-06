@@ -29,8 +29,6 @@ var netlistSvg = require('netlistsvg');
 
 var skins = [
     { url: require('./skins/comphdl.svg'), name: 'comphdl.svg' },
-    { url: require('./skins/default.svg'), name: 'default.svg' },
-    { url: require('./skins/analog.svg'), name: 'analog.svg' }
 ];
 
 var textarea = document.querySelector('#comphdl_json');
