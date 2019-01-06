@@ -16,7 +16,7 @@ else
     while [ 1 ]; do sleep 5m && pidof cargo > /dev/null && echo "travis_wait: cargo still running"; done &
 fi
 
-parcel build static/index.html --log-level 4 --public-url $PUBLIC_URL || exit $?
+parcel build static/index.html --log-level 4 --public-url $PUBLIC_URL --detailed-report || exit $?
 
 if [ -f dist/index.html ]; then
     # Deploy to demo/nightly folder
