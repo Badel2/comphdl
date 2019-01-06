@@ -7,7 +7,7 @@ rust:
 after_success: |
   [ $TRAVIS_BRANCH = master ] &&
   [ $TRAVIS_PULL_REQUEST = false ] &&
-  [ $TRAVIS_RUST_VERSION = nightly ] &&
+  [ $TRAVIS_RUST_VERSION = stable ] &&
   ./ci/build_and_publish_demo.sh
 env:
   global:
