@@ -23,7 +23,7 @@
     "ace-builds": "^1.4.2",
     "brace": "^0.11.1",
     "netlistsvg": "github:Badel2/netlistsvg",
-    "parcel-plugin-cargo-web": "^0.3.0",
+    "parcel-plugin-cargo-web": "github:Badel2/parcel-plugin-cargo-web",
     "stats.js": "^0.17.0",
     "superagent": "^4.1.0",
     "wavedrom": "^1.8.0",
