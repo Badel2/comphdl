@@ -7,18 +7,17 @@ cd $(dirname $0)/..
 NODE_VERSION="10"
 
 ci/create_all_branches.sh &&
-git checkout gh-pages &&
-git pull origin master &&
 ci/install_cargo_web.sh &&
 source ~/.nvm/nvm.sh &&
 nvm install $NODE_VERSION &&
 npm install -g parcel-bundler &&
 npm install &&
 ci/parcel.sh &&
+git checkout gh-pages &&
 git add demo/nightly &&
-git commit -qm 'Nighlty demo' &&
-# We must somehow preserve the demo/v07 folder...
-git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages &&
+git commit --amend -qm 'Nighlty demo' &&
+# Force push to gh-pages rewriting the last commit
+git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages &&
 exit 0
 
 # If any command fails, exit with error status
