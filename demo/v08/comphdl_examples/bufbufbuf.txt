@@ -1,0 +1,37 @@
+component MultiBuf(a) -> (x1, x2, x3, x4, x5, x6) {
+    Buf(a) -> x0;
+    Buf60(x0) -> x1;
+    Buf60(x1) -> x2;
+    Buf60(x2) -> x3;
+    Buf60(x3) -> x4;
+    Buf60(x4) -> x5;
+    Buf60(x5) -> x6;
+}
+
+component Buf(a) -> x {
+    x = a;
+}
+
+component Buf4(a) -> x {
+    Buf(a) -> a1;
+    Buf(a1) -> a2;
+    Buf(a2) -> a3;
+    Buf(a3) -> x;
+}
+
+component Buf10(a) -> x {
+    Buf(a) -> a1;
+    Buf4(a1) -> a2;
+    Buf4(a2) -> a3;
+    Buf(a3) -> x;
+}
+
+component Buf60(a) -> x {
+    Buf10(a) -> a1;
+    Buf10(a1) -> a2;
+    Buf10(a2) -> a3;
+    Buf10(a3) -> a4;
+    Buf10(a4) -> a5;
+    Buf10(a5) -> x;
+}
+

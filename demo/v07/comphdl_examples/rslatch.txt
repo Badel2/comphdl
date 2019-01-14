@@ -1,0 +1,17 @@
+component RSLatch_raw(n_R, n_S) -> Q {
+    Nand(n_S, n_Q) -> Q;
+    Nand(n_R, Q) -> n_Q;
+}
+
+component RSLatch(R, S) -> Q {
+    NotButFilterAnythingSmallerThan2Ticks(R) -> n_R;
+    NotButFilterAnythingSmallerThan2Ticks(S) -> n_S;
+    RSLatch_raw(n_R, n_S) -> Q;
+}
+
+component Buf(d) -> q { d = q; }
+
+component NotButFilterAnythingSmallerThan2Ticks(a) -> x {
+    Buf(a) -> a1;
+    Nand(a, a1) -> x;
+}

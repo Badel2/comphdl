@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>CompHDL demo</title>
+        <style>
+            body {
+                background-color: #eee;
+            }
+            input {
+                font-family: monospace;
+            }
+            textarea {
+                font-family: monospace;
+            }
+            .code {
+                width: 95%;
+            }
+            #container {
+              display: flex;
+              flex-direction: row;
+              flex-wrap: wrap;
+            }
+            .div-1, .div-3 {
+              flex: 1 1 0;
+            }
+            .div-2 {
+               flex: 100%;
+               order: 3;
+            }
+            #draggableControls {
+                /* position: absolute; */
+                border: 1px solid #343434;
+                padding: 8px;
+                background-color: #bbbbbb;
+            }
+            #draggableControlsheader {
+                cursor: move;
+                padding: 10px;
+            }
+            .noselect {
+              -webkit-touch-callout: none; /* iOS Safari */
+                -webkit-user-select: none; /* Safari */
+                 -khtml-user-select: none; /* Konqueror HTML */
+                   -moz-user-select: none; /* Firefox */
+                    -ms-user-select: none; /* Internet Explorer/Edge */
+                        user-select: none; /* Non-prefixed version, currently
+                                              supported by Chrome and Opera */
+            }
+        </style>
+        <style id="wire_style"></style>
+    </head>
+    <body>
+        Note: this is an outdated version, check the newest updates at
+        <a href="https://github.com/Badel2/comphdl">the github repo</a>.
+        <div id="loading_wasm" style="display: block; color: #F00;">
+            WARNING: LOADING WASM... (if this message persists for a long time,
+            check if your browser supports WASM and disable any adblockers)
+        </div>
+        <div id="loaded_wasm" style="display: none; color: #0F0;">
+            WASM MODULE SUCCESSFULLY LOADED
+        </div>
+        <div id="container">
+        <div class="div-1">
+            <div>
+              <button id=loadExampleButton onClick="loadExampleSelect()">LOAD EXAMPLE:</button>
+              <select id=exampleName></select>
+            </div>
+            <div>
+              <input type="text" id="top_name" placeholder="Top component name"></input>
+              <button id="comphdl_start" onClick="runGui()">RUN!</button>
+            </div>
+                <div id="simulation_controls" style="display: none;">
+            <div id="draggableControls">
+                <small id="draggableControlsheader" style="background-color: #55a;">Make this floating and move it:</small>
+                <button onClick="toggleFloatingControls()">TOGGLE FLOATING</button>
+                  <div>
+                    <input type="text" id="tick_display">
+                    <input type="text" id="target_ticks_per_second">
+                    <input type="checkbox" id="check_run_step"> running step
+                    <input type="checkbox" id="check_run_forever"> running forever
+                    <input type="checkbox" id="check_alive"> rust alive
+                    <input type="checkbox" id="check_show_debug" checked> show debug
+                    <input type="checkbox" id="check_show_signals" checked> show signals
+                  </div>
+                  <div>
+                    <button id="pause_simulation" onClick="pauseSimulation()">PAUSE</button>
+                    <button id="run_step" onClick="runStep()">ONE STEP</button>
+                    <button id="run_forever" onClick="resumeSimulation()">RESUME</button>
+                    <button id="stop_simulation" onClick="stopSimulation()">STOP</button>
+                  </div>
+                <div id="top_input"></div>
+                <div id="top_output"></div>
+                </div>
+            </div>
+            <div>
+              <textarea id="comphdl_definition" class="code" style="height:500px;">
+              </textarea>
+            </div>
+        </div>
+        <div class="div-3">
+            DEBUG OUTPUT:
+            <textarea id="top_output_debug" style="height:400px; width:95%" placeholder="Simulation output" readonly></textarea>
+            NETLIST JSON:
+            <textarea id="comphdl_json" style="height:100px; width:95%" placeholder="Netlist json"></textarea>
+            <div>
+                <div style=display:flex;justify-content:space-between>
+                    <button id=formatButton>Format JSON</button>
+                    <div>
+                        <label for=skinSelect>Select skin:</label>
+                        <select id=skinSelect></select>
+                        <button id=renderButton>Render</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="viewerContainer" class="div-2 noselect">
+            <svg id="svgArea">
+            </svg>
+        </div>
+        </div>
+        <script src="comphdl.js"></script>
+        <script src="elk.bundled.js"></script>
+        <script src="netlistsvg.js"></script>
+        <script src="index_js.js"></script>
+    </body>
+</html>
