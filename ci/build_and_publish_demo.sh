@@ -13,6 +13,7 @@ nvm install $NODE_VERSION &&
 npm install -g parcel-bundler &&
 npm install &&
 ci/parcel.sh &&
+git checkout -- . &&
 git checkout gh-pages &&
 git add demo/nightly &&
 git commit --amend -qm 'Nighlty demo' &&
