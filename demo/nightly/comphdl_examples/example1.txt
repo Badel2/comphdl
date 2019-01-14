@@ -1,0 +1,69 @@
+component Buf (d) -> q { d=q; }
+component Not (a) -> q { Nand(a) -> q; }
+
+component Or2(a, b) -> x {
+    Not(a) -> n_a;
+    Not(b) -> n_b;
+    Nand(n_a, n_b) -> x;
+}
+
+component Mux_4_1(s1, s0, a, b, c, d) -> y {
+    Buf  (s1) -> d_s1;
+    Buf  (s0) -> d_s0;
+    Not  (s1) -> n_s1;
+    Not  (s0) -> n_s0;
+    Buf(a) -> d_a; Buf(b) -> d_b; Buf(c) -> d_c; Buf(d) -> d_d;
+    Nand (n_s0, n_s1, d_a) -> sel00;
+    Nand (d_s0, n_s1, d_b) -> sel01;
+    Nand (n_s0, d_s1, d_c) -> sel10;
+    Nand (d_s0, d_s1, d_d) -> sel11;
+    Nand (sel00, sel01, sel10, sel11) -> y;
+}
+
+component Xor2(a, b) -> x {
+    ConstantBit() -> (_0, _1, _X);
+    Mux_4_1(a, b, _0, _1, _1, _0) -> x;
+}
+
+component And3(a, b, c) -> x {
+    Nand(a, b, c) -> n_x;
+    Not(n_x) -> x;
+}
+
+component Demux_1_4(s1, s0, i) -> (f0, f1, f2, f3) {
+    Buf(i)  -> d_i;
+    Buf(s1) -> d_s1; Buf(s0) -> d_s0;
+    Not(s1) -> n_s1; Not(s0) -> n_s0;
+    And3(n_s1, n_s0, d_i) -> f0;
+    And3(n_s1, d_s0, d_i) -> f1;
+    And3(d_s1, n_s0, d_i) -> f2;
+    And3(d_s1, d_s0, d_i) -> f3;
+}
+
+component Array1D(a[3:0], b[3:0]) -> x[1:0] {
+    Nand(a[3:0], b[3:0]) -> x[1:1];
+    Nand(x[1:1]) -> x[0:0];
+}
+
+component Mux_16_4(s[1:0], a[0:15]) -> y[0:3] {
+    Mux_4_1(s[1:0], a[0:3]) -> y[0];
+    Mux_4_1(s[1:0], a[4:7]) -> y[1];
+    Mux_4_1(s[1:0], a[8:11]) -> y[2];
+    Mux_4_1(s[1:0], a[12:15]) -> y[3];
+}
+
+component Mux_16_1(s[3:0], a[0:15]) -> y {
+    Mux_16_4(s[1:0], a[0:15]) -> j[0:3];
+    Mux_4_1(s[3:2], j[0:3]) -> y;
+}
+
+component Quad(a) -> b[3:0] {
+    (a, a, a, a) = b[3:0];
+}
+
+component MuxTest(s[3:0], a, b) -> (x, y) {
+    Quad(a) -> aaaa[3:0];
+    Quad(b) -> bbbb[3:0];
+    Mux_16_1(s[3:0], aaaa[3:0], aaaa[3:0], bbbb[3:0], bbbb[3:0]) -> x;
+    Mux_16_1(s[3:0], aaaa[3:0], bbbb[3:0], aaaa[3:0], bbbb[3:0]) -> y;
+}
