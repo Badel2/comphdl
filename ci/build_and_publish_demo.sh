@@ -13,8 +13,11 @@ nvm install $NODE_VERSION &&
 npm install -g parcel-bundler &&
 npm install &&
 ci/parcel.sh &&
+mv demo/nightly demo/nightly_ &&
 git checkout -- . &&
 git checkout gh-pages &&
+rm -rf demo/nightly &&
+mv demo/nightly_ demo/nightly &&
 git add demo/nightly &&
 git commit --amend -qm 'Nighlty demo' &&
 # Force push to gh-pages rewriting the last commit
