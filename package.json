@@ -28,6 +28,6 @@
     "superagent": "^4.1.0",
     "wavedrom": "^1.8.0",
     "webworker-threads": "^0.7.17",
-    "xterm": "^3.9.1"
+    "xterm": "^3.9.2"
   }
 }
