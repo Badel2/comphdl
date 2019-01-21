@@ -4,7 +4,7 @@ A digital logic simulator with its own programming language.
 
 Early demo available at:
 
-https://badel2.github.io/comphdl/demo/v09/
+https://badel2.github.io/comphdl/demo/v10/
 
 Usage:
 
