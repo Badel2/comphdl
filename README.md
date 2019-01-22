@@ -6,6 +6,8 @@ Early demo available at:
 
 https://badel2.github.io/comphdl/demo/v10/
 
+[Video demo - SR Latch](https://i.imgur.com/RWHww0e.mp4)
+
 Usage:
 
 Load an example, enter a component name, click "RUN". This will generate a
